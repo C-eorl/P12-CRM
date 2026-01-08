@@ -9,7 +9,16 @@ Projet visant a mettre en place un CRM pour l'entreprise Epic Events.
     
 * cloner le githup
 ```bash
-git clone
+git@github.com:C-eorl/P12-CRM.git
+```
+* créer environnement virtuel & activer
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+* démarrer l'application
+```bash
+python3 main.py
 ```
 
 ---
