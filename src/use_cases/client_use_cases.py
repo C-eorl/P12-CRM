@@ -53,7 +53,7 @@ class CreateClientUseCase:
                 email = email,
                 telephone = telephone,
                 company_name=request.company_name,
-                commercial_contact=request.current_user.id
+                commercial_contact=request.current_user
             )
             saved_client = self.repository.save(client)
 
@@ -139,10 +139,6 @@ class UpdateClientUseCase:
                 error=f"Erreur lors de la mise à jour: {str(e)}"
             )
 #############################################################################
-@dataclass
-class ListClientRequest:
-    current_user: User
-
 
 @dataclass
 class ListClientResponse:
@@ -156,14 +152,8 @@ class ListClientUseCase:
     def __init__(self, client_repository: ClientRepository):
         self.repository = client_repository
 
-    def execute(self, request: ListClientRequest) -> ListClientResponse:
+    def execute(self) -> ListClientResponse:
         try:
-            # TODO Acces en lecture seule pour tout le monde
-            if not request.current_user.is_commercial():
-                return ListClientResponse(
-                    success=False,
-                    error="Seuls les commerciaux peuvent récupérer des clients"
-                )
             all_client = self.repository.find_all()
             return ListClientResponse(success=True, client=all_client)
 
@@ -189,13 +179,6 @@ class GetClientUseCase:
 
     def execute(self, request: GetClientRequest):
         try:
-            # TODO Acces en lecture seule pour tout le monde
-            if not request.current_user.is_commercial():
-                return GetClientResponse(
-                    success=False,
-                    error="Seuls les commerciaux peuvent récupérer des clients"
-                )
-
             client = self.repository.find_by_id(request.client_id)
 
             if not client:
