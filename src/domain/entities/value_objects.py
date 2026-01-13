@@ -16,6 +16,7 @@ class Telephone:
     def __str__(self) -> str:
         return self.number
 
+    @staticmethod
     def is_valid(telephone: str)-> bool:
         """Validate telephone format"""
         if not telephone:
@@ -30,15 +31,16 @@ class Email:
     address: str
 
     def __post_init__(self):
-        if not self.is_valid(self.address):
+        if not self._is_valid(self.address):
             raise InvalidEmailError(f"E-mail invalide: {self.address}")
 
     def __str__(self) -> str:
         return self.address
 
-    def is_valid(email: str) -> bool:
+    @staticmethod
+    def _is_valid(email: str) -> bool:
         """Validate email format"""
         if not email:
             return False
-        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        pattern = r'^[a-zA-Z0-9._%+-]+@([a-zA-Z-]+\.)+[a-zA-Z]{2,}$'
         return bool(re.match(pattern, email))
