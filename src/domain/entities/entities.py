@@ -15,13 +15,13 @@ class User:
     role: Role
 
     def is_commercial(self) -> bool:
-        return self.role == Role.COMMERCIAL
+        return self.role is Role.COMMERCIAL
 
     def is_support(self) -> bool:
-        return self.role == Role.SUPPORT
+        return self.role is Role.SUPPORT
 
     def is_gestion(self) -> bool:
-        return self.role == Role.GESTION
+        return self.role is Role.GESTION
 
 
 @dataclass
@@ -51,8 +51,6 @@ class Client:
     def can_be_updated(self, user: User) -> bool:
         if user.id == self.commercial_contact.id:
             return True
-        if user.role == Role.COMMERCIAL:
-            return True
         return False
 
 @dataclass
@@ -71,7 +69,7 @@ class Event:
     id: int
     contrat_id: int
     client_name: str
-    contact_client: Optional[Email, Telephone]
+    contact_client: Client
     support_contact: User
     location: str
     attendees: int
