@@ -1,8 +1,45 @@
 import re
 from dataclasses import dataclass
+from decimal import Decimal
 
-from src.domain.entities.exceptions import InvalidPhoneError, InvalidEmailError
+from src.domain.entities.exceptions import InvalidPhoneError, InvalidEmailError, InvalidAmountError
 
+
+@dataclass(frozen=True)
+class Money:
+    amount: Decimal
+
+    def __post_init__(self):
+        try:
+            amount = Decimal(str(self.amount))
+        except Exception:
+            raise InvalidAmountError("Montant invalide")
+
+        if amount < Decimal("0"):
+            raise InvalidAmountError("Le montant ne peut pas être négatif")
+
+        object.__setattr__(self, "amount", amount)
+
+    def __str__(self):
+        return f"{self.amount:.2f}"
+
+    def __add__(self, other):
+        if not isinstance(other, Money):
+            raise TypeError("Opération valide qu'entre Money")
+        return Money(self.amount + other.amount)
+
+    def __sub__(self, other):
+        if not isinstance(other, Money):
+            raise TypeError("Opération valide qu'entre Money")
+        result = self.amount - other.amount
+        if result < 0:
+            raise InvalidAmountError("Le montant ne peut pas être négatif")
+        return Money(result)
+
+    def __lt__(self, other):
+        if not isinstance(other, Money):
+            raise TypeError("Comparaison impossible")
+        return self.amount < other.amount
 
 @dataclass(frozen=True)
 class Telephone:
@@ -21,7 +58,8 @@ class Telephone:
         """Validate telephone format"""
         if not telephone:
             return False
-        pattern = r'^\+?[\d\s\-\(\)]{8,20}$'
+        pattern = r'^(?:\+33|0)[1-9](?:[\s\-]?\d{2}){4}$'
+
         return bool(re.match(pattern, telephone))
 
 
