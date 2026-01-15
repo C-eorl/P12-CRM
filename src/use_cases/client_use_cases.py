@@ -38,7 +38,7 @@ class CreateClientUseCase:
             if not request.current_user.is_commercial():
                 return CreateClientResponse(
                     success=False,
-                    error="Seuls les commerciaux peuvent créer des clients"
+                    error="Seuls les membres commerciaux peuvent créer des clients"
                 )
 
             try:
@@ -99,7 +99,7 @@ class UpdateClientUseCase:
             if not request.current_user.is_commercial():
                 return UpdateClientResponse(
                     success=False,
-                    error="Seuls les commerciaux peuvent modifier des clients"
+                    error="Seuls les membres commerciaux peuvent modifier des clients"
                 )
 
             email = telephone = fullname = company_name = None
@@ -143,7 +143,7 @@ class UpdateClientUseCase:
 @dataclass
 class ListClientResponse:
     success: bool
-    client: List[Client] = None
+    clients: List[Client] = None
     error: Optional[str] = None
 
 
@@ -225,7 +225,7 @@ class DeleteClientUseCase:
             if not request.current_user.is_commercial():
                 return DeleteClientResponse(
                     success=False,
-                    error="Seuls les commerciaux peuvent supprimer des clients"
+                    error="Seuls les membres commerciaux peuvent supprimer des clients"
                 )
 
             self.repository.delete(client.id)
