@@ -20,10 +20,12 @@ def test_invalid_mail():
             Email(email)
 
 def test_valid_mail():
-    email1 = Email("test@test.fr")
-    email2 = Email("john.test.41@mail.com")
-    email3 = Email("a_4_test@sub.mail.com")
+    valid_emails = [
+        "test@test.fr",
+        "john.test.41@mail.com",
+        "a_4_test@sub.mail.com"
+    ]
 
-    assert isinstance(email1, Email)
-    assert isinstance(email2, Email)
-    assert isinstance(email3, Email)
+    for email in valid_emails:
+        email = Email(email)
+        assert isinstance(email, Email)
