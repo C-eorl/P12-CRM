@@ -102,9 +102,9 @@ class Event:
     name: str
     contrat_id: int
     client_id: int
+    support_contact_id: Optional[int]
     start_date: datetime
     end_date: datetime
-    support_contact_id: Optional[User]
     location: str
     attendees: int
     notes: str
@@ -133,7 +133,7 @@ class Event:
             raise PermissionError(
                 "Seul les membre du support peut être assigné à un évènement"
             )
-        self.support_contact_id = user
+        self.support_contact_id = user.id
 
     def has_support_contact(self) -> bool:
         """Verified if assigned support user"""
@@ -150,17 +150,29 @@ class Event:
     def update_info(self, name: Optional[str], location: Optional[str],
                     attendees: Optional[int], notes: Optional[str]):
         """Updates info about the event"""
-        if name:
+        if name is not None:
+            if not isinstance(name, str):
+                raise BusinessRuleViolation("Le nom doit être du texte")
+            if not name.strip():
+                raise BusinessRuleViolation("le nom ne peut pas être vide")
             self.name = name
-        if location:
+        if location is not None:
+            if not isinstance(name, str):
+                raise BusinessRuleViolation("Le lieu doit être du texte")
+            if not name.strip():
+                raise BusinessRuleViolation("le nom ne peut pas être vide")
             self.location = location
-        if attendees:
-            if attendees < 0:
+        if attendees is not None:
+            if not isinstance(attendees, int):
+                raise BusinessRuleViolation("Le nombre de participant doit être un nombre")
+            if attendees <= 0:
                 raise BusinessRuleViolation(
                     "Le nombre de participants doit être positif"
                 )
             self.attendees = attendees
-        if notes:
+        if notes is not None:
+            if not isinstance(name, str):
+                raise BusinessRuleViolation("Les notes doivent être du texte")
             self.notes = notes
 
     def __str__(self):
