@@ -1,8 +1,6 @@
-from src.domain.entities.entities import User
 from src.domain.entities.enums import Role
 from src.domain.entities.value_objects import Email
 
-from entyties_fixtures import user_commercial, user_support, user_gestion
 
 def test_user_create(user_commercial):
 

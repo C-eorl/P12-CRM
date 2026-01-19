@@ -2,7 +2,6 @@ from datetime import datetime
 
 import pytest
 
-from entyties_fixtures import  event, user_support, user_support2, user_gestion, user_commercial
 from src.domain.entities.entities import Event
 from src.domain.entities.exceptions import BusinessRuleViolation
 

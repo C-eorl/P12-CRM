@@ -1,8 +1,5 @@
-from decimal import Decimal
-
 import pytest
 
-from entyties_fixtures import user_commercial, contrat
 from src.domain.entities.entities import Contrat
 
 from src.domain.entities.enums import ContractStatus
