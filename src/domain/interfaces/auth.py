@@ -1,5 +1,4 @@
 """Authentication interfaces for Epic Events CRM"""
-from abc import ABC, abstractmethod
 from typing import Optional, Protocol
 
 from src.domain.entities.entities import User
