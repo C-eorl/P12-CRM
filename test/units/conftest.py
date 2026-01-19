@@ -5,9 +5,10 @@ import pytest
 from src.domain.entities.entities import User, Client, Contrat, Event
 from src.domain.entities.enums import Role, ContractStatus
 from src.domain.entities.value_objects import Email, Telephone, Money
+from src.infrastructures.repositories.fake_client_repository import FakeClientRepository
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def user_commercial():
     return User(id=1, full_name="test test",
                 email=Email("test@test.com"), password="sfsefs",
@@ -39,9 +40,17 @@ def user_support2():
 @pytest.fixture
 def client(user_commercial):
     return Client(
-        id=1,fullname="test test", email=Email('test@test.fr'),
+        id=None,fullname="test test", email=Email('test@test.fr'),
         telephone=Telephone('0645789845'), company_name="company_test",
-        commercial_contact=user_commercial.id
+        commercial_contact_id=user_commercial.id
+    )
+
+@pytest.fixture
+def client2(user_commercial):
+    return Client(
+        id=None,fullname="test double", email=Email('test42@test.fr'),
+        telephone=Telephone('0645789845'), company_name="company_test2",
+        commercial_contact_id=user_commercial.id
     )
 
 @pytest.fixture(scope="function")
@@ -49,7 +58,7 @@ def contrat():
     return Contrat(
         id=1,
         client= 5,
-        commercial_contact= 1,
+        commercial_contact_id= 1,
         contrat_amount=Money(100),
         balance_due=Money(100),
         status= ContractStatus.UNSIGNED
@@ -69,3 +78,10 @@ def event():
         attendees= 150,
         notes=""
     )
+
+@pytest.fixture
+def client_repository(client, client2):
+    repo = FakeClientRepository()
+    repo.save(client)
+    repo.save(client2)
+    return repo
