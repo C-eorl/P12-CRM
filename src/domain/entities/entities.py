@@ -9,7 +9,7 @@ from src.domain.entities.value_objects import Email, Telephone, Money
 
 @dataclass
 class User:
-    id: int
+    id: Optional[int]
     full_name: str
     email: Email
     password: str
@@ -29,12 +29,12 @@ class User:
 
 @dataclass
 class Client:
-    id: int
+    id: Optional[int]
     fullname: str
     email: Email
     telephone: Telephone
     company_name: str
-    commercial_contact: int
+    commercial_contact_id: int
 
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
@@ -52,15 +52,15 @@ class Client:
         self.updated_at = datetime.now()
 
     def can_be_updated_by(self, user: User) -> bool:
-        if user.id == self.commercial_contact:
+        if user.id == self.commercial_contact_id:
             return True
         return False
 
 @dataclass
 class Contrat:
-    id: int
+    id: Optional[int]
     client: int
-    commercial_contact: int
+    commercial_contact_id: int
     contrat_amount: Money
     balance_due: Money
     status: ContractStatus
@@ -87,7 +87,7 @@ class Contrat:
 
     def can_be_updated_by(self, user: User) -> bool:
         """Verified if user can be updated"""
-        if user.id == self.commercial_contact:
+        if user.id == self.commercial_contact_id:
             return True
         if user.is_gestion():
             return True
@@ -98,7 +98,7 @@ class Contrat:
 
 @dataclass
 class Event:
-    id: int
+    id: Optional[int]
     name: str
     contrat_id: int
     client_id: int
