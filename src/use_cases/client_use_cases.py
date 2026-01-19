@@ -1,11 +1,14 @@
 from dataclasses import dataclass
 from typing import Optional, List
 
+
 from src.domain.entities.entities import Client, User
-from src.domain.entities.exceptions import ValidationError
+from src.domain.entities.exceptions import ValidationError, InvalidEmailError, InvalidPhoneError
 from src.domain.entities.value_objects import Email, Telephone
 
 from src.domain.interfaces.repository import ClientRepository
+from src.domain.policies.user_policy import UserPolicy
+
 
 ################################################################################################
 @dataclass
@@ -34,35 +37,32 @@ class CreateClientUseCase:
 
     def execute(self, request: CreateClientRequest) -> CreateClientResponse:
 
-        try:
-            if not request.current_user.is_commercial():
-                return CreateClientResponse(
-                    success=False,
-                    error="Seuls les membres commerciaux peuvent créer des clients"
-                )
+        policy = UserPolicy(request.current_user)
 
-            try:
-                email = Email(request.email)
-                telephone = Telephone(request.telephone)
-            except ValidationError as e:
-                return CreateClientResponse(success=False, error=str(e))
-
-            client = Client(
-                id = None,
-                fullname=request.fullname,
-                email = email,
-                telephone = telephone,
-                company_name=request.company_name,
-                commercial_contact=request.current_user
-            )
-            saved_client = self.repository.save(client)
-
-            return CreateClientResponse(success=True, client=saved_client)
-
-        except Exception as e:
+        if not policy.can_create_client():
             return CreateClientResponse(
                 success=False,
-                error=f"Erreur lors de la creation: {str(e)}")
+                error="Seuls les membres commerciaux peuvent créer des clients"
+            )
+
+        try:
+            email = Email(request.email)
+            telephone = Telephone(request.telephone)
+        except (ValidationError, InvalidEmailError, InvalidPhoneError) as e:
+            return CreateClientResponse(success=False, error=str(e))
+
+        client = Client(
+            id = None,
+            fullname=request.fullname,
+            email = email,
+            telephone = telephone,
+            company_name=request.company_name,
+            commercial_contact_id=request.current_user.id
+        )
+        saved_client = self.repository.save(client)
+
+        return CreateClientResponse(success=True, client=saved_client)
+
 ################################################################################################
 @dataclass
 class UpdateClientRequest:
@@ -89,55 +89,60 @@ class UpdateClientUseCase:
         self.repository = client_repository
 
     def execute(self, request: UpdateClientRequest):
-        try:
-            client = self.repository.find_by_id(request.client_id)
-            if not client:
-                return UpdateClientResponse(
-                    success=False,
-                    error=f"Client non trouvé"
-                )
-            if not request.current_user.is_commercial():
-                return UpdateClientResponse(
-                    success=False,
-                    error="Seuls les membres commerciaux peuvent modifier des clients"
-                )
-
-            email = telephone = fullname = company_name = None
-
-            if request.email is not None:
-                try:
-                    email = Email(request.email)
-                except ValidationError as e:
-                    return UpdateClientResponse(success=False, error=str(e))
-
-            if request.telephone is not None:
-                try:
-                    telephone = Telephone(request.telephone)
-                except ValidationError as e:
-                    return UpdateClientResponse(success=False, error=str(e))
-
-            if request.fullname is not None:
-                fullname = request.fullname
-
-            if request.company_name is not None:
-                company_name = request.company_name
-
-            client.update_info(
-                fullname = fullname,
-                email = email,
-                telephone = telephone,
-                company_name = company_name
-            )
-
-            updated_client = self.repository.save(client)
-
-            return UpdateClientResponse(success=True, client=updated_client)
-
-        except Exception as e:
+        # Permission liée au role
+        policy = UserPolicy(request.current_user)
+        if not policy.can_update_client():
             return UpdateClientResponse(
                 success=False,
-                error=f"Erreur lors de la mise à jour: {str(e)}"
+                error="Seuls les membres commerciaux peuvent modifier des clients"
             )
+
+        client = self.repository.find_by_id(request.client_id)
+        if not client:
+            return UpdateClientResponse(
+                success=False,
+                error=f"Client non trouvé"
+            )
+
+        # Permission liée à l'association
+        if request.current_user.id != client.commercial_contact_id:
+            return UpdateClientResponse(
+                success=False,
+                error="Vous n'êtes pas associé au client"
+            )
+
+        email = telephone = fullname = company_name = None
+
+        if request.email is not None:
+            try:
+                email = Email(request.email)
+            except (ValidationError, InvalidEmailError, InvalidPhoneError) as e:
+                return UpdateClientResponse(success=False, error=str(e))
+
+        if request.telephone is not None:
+            try:
+                telephone = Telephone(request.telephone)
+            except (ValidationError, InvalidEmailError, InvalidPhoneError) as e:
+                return UpdateClientResponse(success=False, error=str(e))
+
+        if request.fullname is not None:
+            fullname = request.fullname
+
+        if request.company_name is not None:
+            company_name = request.company_name
+
+        client.update_info(
+            fullname = fullname,
+            email = email,
+            telephone = telephone,
+            company_name = company_name
+        )
+
+        updated_client = self.repository.save(client)
+
+        return UpdateClientResponse(success=True, client=updated_client)
+
+
 #############################################################################
 
 @dataclass
@@ -155,7 +160,7 @@ class ListClientUseCase:
     def execute(self) -> ListClientResponse:
         try:
             all_client = self.repository.find_all()
-            return ListClientResponse(success=True, client=all_client)
+            return ListClientResponse(success=True, clients=all_client)
 
         except Exception as e:
             return ListClientResponse(success=False, error=str(e))
@@ -214,19 +219,23 @@ class DeleteClientUseCase:
 
     def execute(self, request: DeleteClientRequest):
 
+        policy = UserPolicy(request.current_user)
+
         try:
             client = self.repository.find_by_id(request.client_id)
+
+            if not policy.can_delete_client():
+                return DeleteClientResponse(
+                    success=False,
+                    error="Seuls les membres commerciaux peuvent supprimer des clients"
+                )
+
             if not client:
                 return DeleteClientResponse(
                     success=False,
                     error=f"Client non trouvé"
                 )
 
-            if not request.current_user.is_commercial():
-                return DeleteClientResponse(
-                    success=False,
-                    error="Seuls les membres commerciaux peuvent supprimer des clients"
-                )
 
             self.repository.delete(client.id)
             return DeleteClientResponse(success=True)
