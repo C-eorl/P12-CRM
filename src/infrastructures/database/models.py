@@ -1,16 +1,14 @@
 import enum
 from typing import List
+from datetime import datetime
 
 from sqlalchemy import Column, Integer, String, DateTime, Enum, Boolean, ForeignKey
 from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
 
+from src.domain.entities.enums import Role, ContractStatus
+
 
 class Base(DeclarativeBase): ...
-
-class Role(enum.Enum):
-    COMMERCIAL = "commercial"
-    SUPPORT = "support"
-    GESTION = "gestion"
 
 class UserModel(Base):
     """Model SQLAlchemy User"""
@@ -21,7 +19,7 @@ class UserModel(Base):
     email: Mapped[str] = mapped_column(String, nullable=False)
     password: Mapped[str] = mapped_column(String, nullable=False)
     role: Mapped[Role] = mapped_column(Enum(Role), nullable=False)
-    created_at: Mapped[DateTime] = Column(DateTime, nullable=False)
+    created_at: Mapped[datetime] = Column(DateTime, nullable=False)
 
     clients: Mapped[List["ClientModel"]] = relationship(back_populates="commercial_contact")
     contrats: Mapped[List["ContratModel"]] = relationship(back_populates="commercial_contact")
@@ -45,8 +43,11 @@ class ClientModel(Base):
     commercial_contact_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     commercial_contact: Mapped[UserModel] = relationship(back_populates="clients")
 
-    created_at: Mapped[DateTime] = mapped_column(DateTime, nullable=False)
-    updated_at: Mapped[DateTime] = mapped_column(DateTime, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+    contrats: Mapped[List["ContratModel"]] = relationship(back_populates="client")
+    events: Mapped[List["EventModel"]] = relationship(back_populates="client")
 
     def __repr__(self) -> str:
         return f"<Client(id={self.id}, fullname='{self.fullname}')>"
@@ -66,9 +67,12 @@ class ContratModel(Base):
 
     contrat_amount: Mapped[int]= mapped_column(Integer, nullable=False)
     balance_due: Mapped[int]= mapped_column(Integer, nullable=False)
-    signed: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    status: Mapped[ContractStatus] = mapped_column(Enum(ContractStatus), nullable=False)
 
-    created_at: Mapped[DateTime] = mapped_column(DateTime, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+    events: Mapped[List["EventModel"]] = relationship(back_populates="contrat")
 
     def __repr__(self) -> str:
         return f"<Contrat(id={self.id}, client={self.client}, commercial_contact={self.commercial_contact})>"
@@ -90,11 +94,15 @@ class EventModel(Base):
     support_contact_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     support_contact: Mapped[UserModel] = relationship(back_populates="events")
 
+    start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    end_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
     location: Mapped[str] = mapped_column(String, nullable=False)
     attendees: Mapped[int] = mapped_column(Integer, nullable=False)
     notes: Mapped[str] = mapped_column(String, nullable=False)
 
-    created_at: Mapped[DateTime] = mapped_column(DateTime, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
     def __repr__(self) -> str:
         return f"<Event(id={self.id}, name={self.name})>"
