@@ -176,8 +176,8 @@ class GetClientResponse:
 
 
 class GetClientUseCase:
-    def __init__(self, repository: ClientRepository):
-        self.repository = repository
+    def __init__(self, client_repository: ClientRepository):
+        self.repository = client_repository
 
     def execute(self, request: GetClientRequest):
         client = self.repository.find_by_id(request.client_id)
@@ -205,8 +205,8 @@ class DeleteClientResponse:
 
 
 class DeleteClientUseCase:
-    def __init__(self, repository: ClientRepository):
-        self.repository = repository
+    def __init__(self, client_repository: ClientRepository):
+        self.repository = client_repository
 
     def execute(self, request: DeleteClientRequest):
 
