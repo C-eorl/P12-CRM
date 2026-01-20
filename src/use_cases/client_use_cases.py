@@ -105,7 +105,7 @@ class UpdateClientUseCase:
             )
 
         # Permission liée à l'association
-        if request.current_user.id != client.commercial_contact_id:
+        if not client.can_be_updated_by(request.current_user):
             return UpdateClientResponse(
                 success=False,
                 error="Vous n'êtes pas associé au client"
@@ -158,12 +158,9 @@ class ListClientUseCase:
         self.repository = client_repository
 
     def execute(self) -> ListClientResponse:
-        try:
-            all_client = self.repository.find_all()
-            return ListClientResponse(success=True, clients=all_client)
+        all_client = self.repository.find_all()
+        return ListClientResponse(success=True, clients=all_client)
 
-        except Exception as e:
-            return ListClientResponse(success=False, error=str(e))
 #############################################################################
 @dataclass
 class GetClientRequest:
@@ -183,22 +180,16 @@ class GetClientUseCase:
         self.repository = repository
 
     def execute(self, request: GetClientRequest):
-        try:
-            client = self.repository.find_by_id(request.client_id)
+        client = self.repository.find_by_id(request.client_id)
 
-            if not client:
-                return GetClientResponse(
-                    success=False,
-                    error=f"Client non trouvé"
-                )
-
-            return GetClientResponse(success=True, client=client)
-
-        except Exception as e:
+        if not client:
             return GetClientResponse(
                 success=False,
-                error=f"Erreur lors de la recherche: {str(e)}"
+                error=f"Client non trouvé"
             )
+
+        return GetClientResponse(success=True, client=client)
+
 
 ##############################################################################
 @dataclass
@@ -220,28 +211,25 @@ class DeleteClientUseCase:
     def execute(self, request: DeleteClientRequest):
 
         policy = UserPolicy(request.current_user)
-
-        try:
-            client = self.repository.find_by_id(request.client_id)
-
-            if not policy.can_delete_client():
-                return DeleteClientResponse(
-                    success=False,
-                    error="Seuls les membres commerciaux peuvent supprimer des clients"
-                )
-
-            if not client:
-                return DeleteClientResponse(
-                    success=False,
-                    error=f"Client non trouvé"
-                )
-
-
-            self.repository.delete(client.id)
-            return DeleteClientResponse(success=True)
-
-        except Exception as e:
+        if not policy.can_delete_client():
             return DeleteClientResponse(
                 success=False,
-                error=f"Erreur lors de la recherche: {str(e)}"
+                error="Seuls les membres commerciaux peuvent supprimer des clients"
             )
+
+        client = self.repository.find_by_id(request.client_id)
+        if not client:
+            return DeleteClientResponse(
+                success=False,
+                error=f"Client non trouvé"
+            )
+
+        # Permission liée à l'association
+        if not client.can_be_updated_by(request.current_user):
+            return DeleteClientResponse(
+                success=False,
+                error="Vous n'êtes pas associé au client"
+            )
+
+        self.repository.delete(client.id)
+        return DeleteClientResponse(success=True)
