@@ -19,13 +19,13 @@ def test_client_update_info(client):
     fullname = "futur test"
     email = Email('futur@test.fr')
     telephone = Telephone('0999999999')
-    company_name = "futur_test"
+    company_name = None
     client.update_info(fullname=fullname, email=email, telephone=telephone, company_name=company_name)
 
     assert client.fullname == fullname
     assert client.email == email
     assert client.telephone == telephone
-    assert client.company_name == company_name
+    assert client.company_name == "company_test"
     assert client.updated_at != client.created_at
 
 def test_client_can_by_update(client, user_commercial, user_commercial2):
