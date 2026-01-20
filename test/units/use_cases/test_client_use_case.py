@@ -45,7 +45,7 @@ def test_create_no_commercial_user(user_gestion, client_repository):
     assert response.success is False
 
 def test_create_invalid_data(user_commercial, client_repository):
-    """Test creating a new client via use case with no commercial user"""
+    """Test creating a new client via use case with invalid data"""
     repo = client_repository
     client_create_UC = CreateClientUseCase(repo)
     request = CreateClientRequest(
@@ -66,7 +66,7 @@ def test_create_invalid_data(user_commercial, client_repository):
 ######################################################################
 
 def test_update_client(user_commercial, client_repository):
-    """Test getting a client via use case"""
+    """Test updated a client via use case"""
     repo = client_repository
     client_update_UC = UpdateClientUseCase(repo)
     request = UpdateClientRequest(
@@ -85,6 +85,60 @@ def test_update_client(user_commercial, client_repository):
     assert isinstance(response.client, Client)
     found_client = repo.find_by_id(1)
     assert found_client.fullname == "modified fullname"
+
+def test_update_client_invalid_data(user_commercial, client_repository):
+    """Test update a client via use case with invalid data"""
+    repo = client_repository
+    client_update_UC = UpdateClientUseCase(repo)
+    request = UpdateClientRequest(
+        client_id=1,
+        fullname=None,
+        email="invalid",
+        telephone=None,
+        company_name=None,
+        current_user=user_commercial,
+    )
+
+    response = client_update_UC.execute(request)
+
+    assert isinstance(response, UpdateClientResponse)
+    assert response.success is False
+
+def test_update_client_no_commercial(user_gestion, client_repository):
+    """Test update a client via use case with no commercial user"""
+    repo = client_repository
+    client_update_UC = UpdateClientUseCase(repo)
+    request = UpdateClientRequest(
+        client_id=1,
+        fullname=None,
+        email="invalid",
+        telephone=None,
+        company_name=None,
+        current_user=user_gestion,
+    )
+
+    response = client_update_UC.execute(request)
+
+    assert isinstance(response, UpdateClientResponse)
+    assert response.success is False
+
+def test_update_client_no_associe_commercial(user_commercial2, client_repository):
+    """Test update a client via use case with no commercial user"""
+    repo = client_repository
+    client_update_UC = UpdateClientUseCase(repo)
+    request = UpdateClientRequest(
+        client_id=1,
+        fullname=None,
+        email="invalid",
+        telephone=None,
+        company_name=None,
+        current_user=user_commercial2,
+    )
+
+    response = client_update_UC.execute(request)
+
+    assert isinstance(response, UpdateClientResponse)
+    assert response.success is False
 
 ######################################################################
 #                            Get List Client Use Case                  #
@@ -119,6 +173,19 @@ def test_get_client_by_id(user_commercial, client_repository):
     assert response.success is True
     assert isinstance(response.client, Client)
 
+def test_get_client_by_invalid_id(user_commercial, client_repository):
+    """Test getting a client by invalid id via use case"""
+    repo = client_repository
+    client_get_UC = GetClientUseCase(repo)
+    request = GetClientRequest(
+        client_id=456,
+        current_user=user_commercial
+    )
+    response = client_get_UC.execute(request)
+
+    assert isinstance(response, GetClientResponse)
+    assert response.success is False
+
 ######################################################################
 #                            Delete Client Use Case                  #
 ######################################################################
@@ -135,5 +202,43 @@ def test_delete_client(user_commercial, client_repository):
 
     assert isinstance(response, DeleteClientResponse)
     assert response.success is True
-
     assert len(repo.find_all()) == 1
+
+def test_delete_client_no_commercial(user_support, client_repository):
+    """Test deleting a client with no commercial user """
+    repo = client_repository
+    client_delete_UC = DeleteClientUseCase(repo)
+    request = DeleteClientRequest(
+        client_id=1,
+        current_user=user_support
+    )
+    response = client_delete_UC.execute(request)
+
+    assert isinstance(response, DeleteClientResponse)
+    assert response.success is False
+
+def test_delete_client_invalid_id(user_commercial, client_repository):
+    """Test deleting a client with invalid_id """
+    repo = client_repository
+    client_delete_UC = DeleteClientUseCase(repo)
+    request = DeleteClientRequest(
+        client_id=456,
+        current_user=user_commercial
+    )
+    response = client_delete_UC.execute(request)
+
+    assert isinstance(response, DeleteClientResponse)
+    assert response.success is False
+
+def test_delete_client_no_associe_commercial(user_commercial2, client_repository):
+    """Test deleting a client with no associe commercial user """
+    repo = client_repository
+    client_delete_UC = DeleteClientUseCase(repo)
+    request = DeleteClientRequest(
+        client_id=1,
+        current_user=user_commercial2
+    )
+    response = client_delete_UC.execute(request)
+
+    assert isinstance(response, DeleteClientResponse)
+    assert response.success is False
