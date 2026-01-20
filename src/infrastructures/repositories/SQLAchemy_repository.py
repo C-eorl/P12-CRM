@@ -54,7 +54,9 @@ class SQLAchemyClientRepository:
         return [self._to_entity(db_client) for db_client in db_clients]
 
     def delete(self, client_id: int) -> None:
-        self.session.delete(ClientModel(id=client_id))
+        find_client = self.session.get(ClientModel, client_id)
+        self.session.delete(find_client)
+        self.session.commit()
 
     @staticmethod
     def _to_entity(model: ClientModel) -> Client:
