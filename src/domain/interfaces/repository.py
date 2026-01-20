@@ -1,4 +1,4 @@
-from typing import Protocol, List
+from typing import Protocol, List, Optional
 
 from src.domain.entities.entities import Client, User, Contrat, Event
 from src.domain.entities.enums import Role
@@ -14,7 +14,7 @@ class ClientRepository(Protocol):
     """
     def save(self, client: Client) -> Client: ...
 
-    def find_by_id(self, client_id: int) -> Client: ...
+    def find_by_id(self, client_id: int) -> Optional[Client]: ...
 
     def find_all(self) -> List[Client]: ...
 
