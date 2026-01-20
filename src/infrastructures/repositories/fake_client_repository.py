@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from src.domain.entities.entities import Client
 
@@ -8,7 +8,7 @@ class FakeClientRepository:
         self.clients: dict[int, Client] = {}
         self._id_counter = 1
 
-    def save(self, client: Client) -> Client | None:
+    def save(self, client: Client) -> Client:
 
         if client.id is None:
             # nouveau client
@@ -21,15 +21,14 @@ class FakeClientRepository:
             # modification client
             data_client = self.clients.get(client.id)
             if data_client:
-                data_client.fullname = client.fullname if client.fullname is not None else None
-                data_client.email = client.email if client.email is not None else None
-                data_client.telephone = client.telephone if client.telephone is not None else None
-                data_client.company_name = client.company_name if client.company_name is not None else None
+                data_client.fullname = client.fullname
+                data_client.email = client.email
+                data_client.telephone = client.telephone
+                data_client.company_name = client.company_name
                 return client
 
-        return None
 
-    def find_by_id(self, client_id: int) -> Client:
+    def find_by_id(self, client_id: int) -> Optional[Client]:
         return self.clients.get(client_id)
 
     def find_all(self) -> List[Client]:
