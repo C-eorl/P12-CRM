@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from src.domain.entities.entities import User, Client, Contrat, Event
 from src.domain.entities.enums import Role, ContractStatus
 from src.domain.entities.value_objects import Email, Telephone, Money
-from src.infrastructures.database.models import Base, ClientModel
+from src.infrastructures.database.models import Base
 from src.infrastructures.repositories.SQLAchemy_repository import SQLAchemyClientRepository
 from src.infrastructures.repositories.fake_client_repository import FakeClientRepository
 
@@ -20,30 +20,30 @@ DATABASE_URL = os.getenv("DATABASE_URL_TEST")
 
 @pytest.fixture(scope="module")
 def user_commercial():
-    return User(id=None, full_name="test test",
+    return User(id=None, fullname="test test",
                 email=Email("test@test.com"), password="sfsefs",
                 role=Role.COMMERCIAL)
 
 @pytest.fixture
 def user_support():
-    return User(id=None, full_name="test test",
+    return User(id=None, fullname="test test",
                 email=Email("test@test.com"), password="sfsefs",
                 role=Role.SUPPORT)
 
 @pytest.fixture
 def user_gestion():
-    return User(id=None, full_name="test test",
+    return User(id=None, fullname="test test",
                 email=Email("test@test.com"), password="sfsefs",
                 role=Role.GESTION)
 
 @pytest.fixture
 def user_commercial2():
-    return User(id=None, full_name="test2", email=Email("test2@test.fr"),
+    return User(id=None, fullname="test2", email=Email("test2@test.fr"),
                 password="dfsdfsf", role=Role.COMMERCIAL,)
 
 @pytest.fixture
 def user_support2():
-    return User(id=None, full_name="test test",
+    return User(id=None, fullname="test test",
                 email=Email("test@test.com"), password="sfsefs",
                 role=Role.SUPPORT)
 
@@ -67,7 +67,7 @@ def client2(user_commercial):
 def contrat():
     return Contrat(
         id=1,
-        client= 5,
+        client_id= 5,
         commercial_contact_id= 1,
         contrat_amount=Money(100),
         balance_due=Money(100),
