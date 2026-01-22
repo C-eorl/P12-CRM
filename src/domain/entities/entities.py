@@ -10,10 +10,13 @@ from src.domain.entities.value_objects import Email, Telephone, Money
 @dataclass
 class User:
     id: Optional[int]
-    full_name: str
+    fullname: str
     email: Email
     password: str
     role: Role
+
+    created_at: datetime = field(default_factory=datetime.now)
+    updated_at: datetime = field(default_factory=datetime.now)
 
     def is_commercial(self) -> bool:
         return self.role is Role.COMMERCIAL
@@ -59,7 +62,7 @@ class Client:
 @dataclass
 class Contrat:
     id: Optional[int]
-    client: int
+    client_id: int
     commercial_contact_id: int
     contrat_amount: Money
     balance_due: Money
