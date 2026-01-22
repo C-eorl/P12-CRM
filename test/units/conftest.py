@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL_TEST")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 @pytest.fixture(scope="module")
 def user_commercial():
