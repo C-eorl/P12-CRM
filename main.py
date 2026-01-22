@@ -1,6 +1,9 @@
+from src.presentation.cli.cli_main import app
+
+
 def main():
-    print("Hello from p12-crm!")
+    app()
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
+
