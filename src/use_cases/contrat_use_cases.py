@@ -1,0 +1,264 @@
+##############################################################################
+from dataclasses import dataclass
+from typing import Optional, List
+
+from src.domain.entities.entities import User, Contrat
+from src.domain.entities.enums import ContractStatus
+from src.domain.entities.exceptions import BusinessRuleViolation
+from src.domain.entities.value_objects import Money
+from src.domain.interfaces.repository import ContratRepository
+from src.domain.policies.user_policy import UserPolicy
+
+
+@dataclass
+class CreateContratRequest:
+    client_id: int
+    commercial_contact_id: int
+    contrat_amount: Money
+    current_user: User
+
+
+@dataclass
+class CreateContratResponse:
+    success: bool
+    contrat: Optional[Contrat] = None
+    error: Optional[str] = None
+
+
+class CreateContratUseCase:
+    """Use case for creating a new contrat"""
+
+    def __init__(self, contrat_repository: ContratRepository):
+        self.repository = contrat_repository
+
+    def execute(self, request: CreateContratRequest) -> CreateContratResponse:
+
+        policy = UserPolicy(request.current_user)
+        if not policy.can_create_contrat():
+            return CreateContratResponse(
+                success=False,
+                error="Seuls les membres gestion peuvent créer des contrats"
+            )
+
+        contrat = Contrat(
+            id=None,
+            client_id=request.client_id,
+            commercial_contact_id=request.commercial_contact_id,
+            contrat_amount=request.contrat_amount,
+            balance_due=request.contrat_amount,
+            status=ContractStatus.UNSIGNED,
+        )
+
+        saved_contrat = self.repository.save(contrat)
+        return CreateContratResponse(success=True, contrat=saved_contrat)
+
+##############################################################################
+@dataclass
+class UpdateContratRequest:
+    contrat_id: int
+    contrat_amount: Optional[Money]
+    status: Optional[ContractStatus]
+    current_user: User
+
+
+@dataclass
+class UpdateContratResponse:
+    success: bool
+    contrat: Optional[Contrat] = None
+    error: Optional[str] = None
+
+
+class UpdateContratUseCase:
+    """Use case for updating a contrat"""
+    # TODO A vérifier si utile
+
+    def __init__(self, contrat_repository: ContratRepository):
+        self.repository = contrat_repository
+
+    def execute(self, request: UpdateContratRequest) -> UpdateContratResponse:
+
+        contrat = self.repository.find_by_id(request.contrat_id)
+        if not contrat:
+            return UpdateContratResponse(
+                success=False,
+                error="Contrat non trouvé"
+            )
+
+        if not contrat.can_be_updated_by(request.current_user):
+            return UpdateContratResponse(
+                success=False,
+                error="Vous n'avez pas les droits pour modifier ce contrat"
+            )
+
+        updated_contrat = self.repository.save(contrat)
+        return UpdateContratResponse(success=True, contrat=updated_contrat)
+
+##############################################################################
+@dataclass
+class ListContratResponse:
+    success: bool
+    contrats: List[Contrat] = None
+    error: Optional[str] = None
+
+
+class ListContratUseCase:
+    """Use case for listing contrats"""
+
+    def __init__(self, contrat_repository: ContratRepository):
+        self.repository = contrat_repository
+
+    def execute(self) -> ListContratResponse:
+        contrats = self.repository.find_all()
+        return ListContratResponse(success=True, contrats=contrats)
+
+##############################################################################
+@dataclass
+class GetContratRequest:
+    contrat_id: int
+    current_user: User
+
+
+@dataclass
+class GetContratResponse:
+    success: bool
+    contrat: Optional[Contrat] = None
+    error: Optional[str] = None
+
+
+class GetContratUseCase:
+    """Use case for retrieving a contrat"""
+
+    def __init__(self, contrat_repository: ContratRepository):
+        self.repository = contrat_repository
+
+    def execute(self, request: GetContratRequest) -> GetContratResponse:
+
+        contrat = self.repository.find_by_id(request.contrat_id)
+        if not contrat:
+            return GetContratResponse(
+                success=False,
+                error="Contrat non trouvé"
+            )
+
+        return GetContratResponse(success=True, contrat=contrat)
+
+##############################################################################
+@dataclass
+class DeleteContratRequest:
+    contrat_id: int
+    current_user: User
+
+
+@dataclass
+class DeleteContratResponse:
+    success: bool
+    error: Optional[str] = None
+
+
+class DeleteContratUseCase:
+    """Use case for deleting a contrat"""
+
+    def __init__(self, contrat_repository: ContratRepository):
+        self.repository = contrat_repository
+
+    def execute(self, request: DeleteContratRequest) -> DeleteContratResponse:
+
+        policy = UserPolicy(request.current_user)
+        if not policy.can_delete_contrat():
+            return DeleteContratResponse(
+                success=False,
+                error="Seuls les membres gestion peuvent supprimer des contrats"
+            )
+
+        contrat = self.repository.find_by_id(request.contrat_id)
+        if not contrat:
+            return DeleteContratResponse(
+                success=False,
+                error="Contrat non trouvé"
+            )
+
+        self.repository.delete(contrat.id)
+        return DeleteContratResponse(success=True)
+
+##############################################################################
+
+@dataclass
+class SignContratRequest:
+    contrat_id: int
+    current_user: User
+
+
+@dataclass
+class SignContratResponse:
+    success: bool
+    contrat: Optional[Contrat] = None
+    error: Optional[str] = None
+
+
+class SignContratUseCase:
+    """Use case for sign a contrat"""
+
+    def __init__(self, contrat_repository: ContratRepository):
+        self.repository = contrat_repository
+
+    def execute(self, request: GetContratRequest) -> GetContratResponse:
+
+        contrat = self.repository.find_by_id(request.contrat_id)
+        if not contrat:
+            return GetContratResponse(
+                success=False,
+                error="Contrat non trouvé"
+            )
+
+        try:
+            contrat.sign()
+        except BusinessRuleViolation as e:
+            return GetContratResponse(success=False, error=str(e))
+
+        self.repository.save(contrat)
+        return GetContratResponse(success=True, contrat=contrat)
+
+##############################################################################
+@dataclass
+class RecordPaymentContratRequest:
+    contrat_id: int
+    payment: int
+    current_user: User
+
+
+@dataclass
+class RecordPaymentContratResponse:
+    success: bool
+    contrat: Optional[Contrat] = None
+    error: Optional[str] = None
+
+
+class RecordPaymentContratUseCase:
+    """Use case for retrieving a contrat"""
+
+    def __init__(self, contrat_repository: ContratRepository):
+        self.repository = contrat_repository
+
+    def execute(self, request: RecordPaymentContratRequest) -> RecordPaymentContratResponse:
+
+        contrat = self.repository.find_by_id(request.contrat_id)
+        if not contrat:
+            return RecordPaymentContratResponse(
+                success=False,
+                error="Contrat non trouvé"
+            )
+
+        if contrat.is_fully_paid():
+            return RecordPaymentContratResponse(
+                success=False,
+                error="Le contrat a été entièrement réglé"
+            )
+
+        try:
+            payment = Money(request.payment)
+            contrat.record_payment(payment)
+        except BusinessRuleViolation as e:
+            return RecordPaymentContratResponse(success=False, error=str(e))
+
+        self.repository.save(contrat)
+        return RecordPaymentContratResponse(success=True, contrat=contrat)
