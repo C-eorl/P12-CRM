@@ -27,8 +27,15 @@ class User:
     def is_gestion(self) -> bool:
         return self.role is Role.GESTION
 
-    # TODO ajout d'un UserPolicy pour les permission si besoin
+    def is_admin(self) -> bool:
+        return self.role is Role.ADMIN
 
+    def update_info(self, fullname: Optional[str], email: Optional[Email]) -> None:
+        if fullname:
+            self.fullname = fullname
+        if email:
+            self.email = email
+        self.updated_at = datetime.now()
 
 @dataclass
 class Client:
@@ -77,10 +84,13 @@ class Contrat:
             raise BusinessRuleViolation("Contrat déjà signé")
         self.status = ContractStatus.SIGNED
 
+    def has_sign(self) -> bool:
+        return self.status == ContractStatus.SIGNED
+
     def record_payment(self, payment: Money):
         if payment > self.balance_due:
             raise BusinessRuleViolation(
-                "Le montant est plus grand que le reste à payer"
+                "Le montant du paiement est plus grand que le reste à payer"
             )
 
         self.balance_due = self.balance_due - payment
@@ -150,7 +160,8 @@ class Event:
             return True
         return False
 
-    def update_info(self, name: Optional[str], location: Optional[str],
+    def update_info(self, name: Optional[str], start_date: Optional[datetime],
+                    end_date: Optional[datetime],location: Optional[str],
                     attendees: Optional[int], notes: Optional[str]):
         """Updates info about the event"""
         if name is not None:
@@ -159,12 +170,32 @@ class Event:
             if not name.strip():
                 raise BusinessRuleViolation("le nom ne peut pas être vide")
             self.name = name
+
+        if start_date is not None:
+            if not isinstance(start_date, datetime):
+                raise BusinessRuleViolation("la date de début doit être une date valide")
+            if self.start_date < datetime.now():
+                raise BusinessRuleViolation(
+                    "La date de début est déjà passé"
+                )
+            self.start_date = start_date
+
+        if end_date is not None:
+            if not isinstance(end_date, datetime):
+                raise BusinessRuleViolation("la date de début doit être une date valide")
+            if self.end_date <= self.start_date:
+                raise BusinessRuleViolation(
+                    "La date de fin doit être après la date de début"
+                )
+            self.end_date = end_date
+
         if location is not None:
             if not isinstance(name, str):
                 raise BusinessRuleViolation("Le lieu doit être du texte")
             if not name.strip():
                 raise BusinessRuleViolation("le nom ne peut pas être vide")
             self.location = location
+
         if attendees is not None:
             if not isinstance(attendees, int):
                 raise BusinessRuleViolation("Le nombre de participant doit être un nombre")
@@ -173,6 +204,7 @@ class Event:
                     "Le nombre de participants doit être positif"
                 )
             self.attendees = attendees
+
         if notes is not None:
             if not isinstance(name, str):
                 raise BusinessRuleViolation("Les notes doivent être du texte")
