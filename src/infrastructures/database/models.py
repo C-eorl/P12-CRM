@@ -19,7 +19,9 @@ class UserModel(Base):
     email: Mapped[str] = mapped_column(String, nullable=False)
     password: Mapped[str] = mapped_column(String, nullable=False)
     role: Mapped[Role] = mapped_column(Enum(Role), nullable=False)
+
     created_at: Mapped[datetime] = Column(DateTime, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
     clients: Mapped[List["ClientModel"]] = relationship(back_populates="commercial_contact")
     contrats: Mapped[List["ContratModel"]] = relationship(back_populates="commercial_contact")
