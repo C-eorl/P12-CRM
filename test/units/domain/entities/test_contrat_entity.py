@@ -39,4 +39,5 @@ def test_contrat_is_not_fully_paid(contrat):
     assert contrat.is_fully_paid() is False
 
 def test_can_be_updated_by(contrat, user_commercial):
+    user_commercial.id =1
     assert contrat.can_be_updated_by(user_commercial) is True
