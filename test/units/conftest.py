@@ -9,7 +9,8 @@ from src.domain.entities.entities import User, Client, Contrat, Event
 from src.domain.entities.enums import Role, ContractStatus
 from src.domain.entities.value_objects import Email, Telephone, Money
 from src.infrastructures.database.models import Base
-from src.infrastructures.repositories.SQLAchemy_repository import SQLAchemyClientRepository
+from src.infrastructures.repositories.SQLAchemy_repository import SQLAchemyClientRepository, SQLAchemyUserRepository, \
+    SQLAchemyContratRepository, SQLAchemyEventRepository
 from src.infrastructures.repositories.fake_client_repository import FakeClientRepository
 
 from dotenv import load_dotenv
@@ -66,9 +67,9 @@ def client2(user_commercial):
 @pytest.fixture(scope="function")
 def contrat():
     return Contrat(
-        id=1,
-        client_id= 5,
-        commercial_contact_id= 1,
+        id=None,
+        client_id= 3,
+        commercial_contact_id= 4,
         contrat_amount=Money(100),
         balance_due=Money(100),
         status= ContractStatus.UNSIGNED
@@ -77,11 +78,11 @@ def contrat():
 @pytest.fixture
 def event():
     return Event(
-        id=1,
+        id=None,
         name="test event",
         contrat_id= 1,
         client_id= 1,
-        support_contact_id= 2,
+        support_contact_id= 5,
         start_date= datetime(2026, 5,15),
         end_date= datetime(2026, 5,20),
         location="2 rue des test, Nantes",
@@ -112,3 +113,15 @@ def session():
 @pytest.fixture
 def client_SQLAlchemy_repository(session):
     return SQLAchemyClientRepository(session)
+
+@pytest.fixture
+def user_SQLAlchemy_repository(session):
+    return SQLAchemyUserRepository(session)
+
+@pytest.fixture
+def contrat_SQLAlchemy_repository(session):
+    return SQLAchemyContratRepository(session)
+
+@pytest.fixture
+def event_SQLAlchemy_repository(session):
+    return SQLAchemyEventRepository(session)
