@@ -4,7 +4,7 @@ from src.domain.entities.value_objects import Email
 
 def test_user_create(user_commercial):
 
-    assert type(user_commercial.id) == int
+    assert user_commercial.id is None
     assert type(user_commercial.fullname) == str
     assert type(user_commercial.email) == Email
     assert type(user_commercial.password) == str
