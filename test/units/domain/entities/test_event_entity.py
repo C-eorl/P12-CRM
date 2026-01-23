@@ -63,6 +63,7 @@ def test_create_not_attendees_event(event):
 
 def test_assign_support(event, user_support):
     """Assign user support (id: 2) to event"""
+    user_support.id = 2
     event.assign_support(user_support)
     assert event.support_contact_id == 2
 
@@ -100,6 +101,7 @@ def test_can_be_updated_by_gestion(event, user_gestion):
 
 def test_can_be_updated_by_support(event, user_support):
     """Check if support_user assigned can update event"""
+    user_support.id = 2
     assert event.can_be_updated_by(user_support) == True
 
 def test_can_be_updated_by_not_assigned_support(event, user_support2):
@@ -116,7 +118,9 @@ def test_update_info_valid(event):
         name= "test modify",
         location = "2 avenue modifié",
         attendees = 1000,
-        notes = "lorem ipsum"
+        notes = "lorem ipsum",
+        start_date = datetime(2026, 5, 15, 9, 45),
+        end_date = datetime(2026, 5, 20, 20, 00)
     )
 
     assert event.name == "test modify"
@@ -132,7 +136,9 @@ def test_update_info_invalid(event):
             name=12, # int attend str
             location="2 avenue modifié",
             attendees=1000,
-            notes="lorem ipsum"
+            notes="lorem ipsum",
+            start_date= None,
+            end_date= None
         )
 
     with pytest.raises(BusinessRuleViolation):
@@ -140,5 +146,7 @@ def test_update_info_invalid(event):
             name="",
             location="",
             attendees=0,
-            notes=0
+            notes=0,
+            start_date="dsd",
+            end_date="dsdd"
         )
