@@ -101,7 +101,7 @@ def test_can_be_updated_by_gestion(event, user_gestion):
 
 def test_can_be_updated_by_support(event, user_support):
     """Check if support_user assigned can update event"""
-    user_support.id = 2
+    user_support.id = 5
     assert event.can_be_updated_by(user_support) == True
 
 def test_can_be_updated_by_not_assigned_support(event, user_support2):
