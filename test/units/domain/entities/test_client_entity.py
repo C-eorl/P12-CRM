@@ -30,5 +30,8 @@ def test_client_update_info(client):
 
 def test_client_can_by_update(client, user_commercial, user_commercial2):
 
+    user_commercial.id = 3 # assigned
+    user_commercial2.id = 2
+
     assert client.can_be_updated_by(user_commercial2) is False
     assert client.can_be_updated_by(user_commercial) is True
