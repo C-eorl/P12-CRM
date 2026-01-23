@@ -130,9 +130,10 @@ class SQLAchemyUserRepository:
 
         return [self._to_entity(db_user) for db_user in db_users]
 
-    def find_by_email(self, email: str) -> User:
+    def find_by_email(self, email: str) -> Optional[User]:
         """Finds a user by email"""
-        db_user = self.session.get(UserModel, email)
+        stmt = select(UserModel).where(UserModel.email == email)
+        db_user = self.session.execute(stmt).scalar_one_or_none()
 
         if db_user is None:
             return None
@@ -306,7 +307,7 @@ class SQLAchemyEventRepository:
 
     def find_by_id(self, event_id: int) -> Optional[Event]:
         """Finds a event by its id"""
-        db_event = self.session.get(ContratModel, event_id)
+        db_event = self.session.get(EventModel, event_id)
 
         if db_event is None:
             return None
@@ -336,7 +337,7 @@ class SQLAchemyEventRepository:
 
         return [self._to_entity(db_event) for db_event in db_events]
 
-    def find_by_client(self, client_id: int) -> List[Event]:
+    def find_by_client_id(self, client_id: int) -> List[Event]:
         """Finds all events by client"""
         result = self.session.execute(
             select(EventModel).where(EventModel.client_id == client_id)
