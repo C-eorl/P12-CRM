@@ -142,7 +142,7 @@ def test_update_client_no_associe_commercial(user_commercial2, client_repository
     assert response.success is False
 
 ######################################################################
-#                            Get List Client Use Case                  #
+#                            Get List Client Use Case                #
 ######################################################################
 
 def test_get_list_client(user_commercial, client_repository):
