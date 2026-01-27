@@ -1,8 +1,7 @@
-import enum
 from typing import List
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, DateTime, Enum, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Enum, ForeignKey
 from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
 
 from src.domain.entities.enums import Role, ContractStatus
@@ -16,7 +15,7 @@ class UserModel(Base):
 
     id: Mapped[int]= mapped_column(primary_key=True)
     fullname: Mapped[str] = mapped_column(String(100), nullable=False)
-    email: Mapped[str] = mapped_column(String, nullable=False)
+    email: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     password: Mapped[str] = mapped_column(String, nullable=False)
     role: Mapped[Role] = mapped_column(Enum(Role), nullable=False)
 
