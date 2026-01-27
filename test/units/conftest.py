@@ -11,7 +11,7 @@ from src.domain.entities.value_objects import Email, Telephone, Money
 from src.infrastructures.database.models import Base
 from src.infrastructures.repositories.SQLAchemy_repository import SQLAchemyClientRepository, SQLAchemyUserRepository, \
     SQLAchemyContratRepository, SQLAchemyEventRepository
-from src.infrastructures.repositories.fake_client_repository import FakeClientRepository
+from src.infrastructures.repositories.fake_client_repository import FakeClientRepository, FakeUserRepository
 
 from dotenv import load_dotenv
 
@@ -19,7 +19,7 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def user_commercial():
     return User(id=None, fullname="test test",
                 email=Email("test@test.com"), password="sfsefs",
@@ -95,6 +95,14 @@ def client_repository(client, client2):
     repo = FakeClientRepository()
     repo.save(client)
     repo.save(client2)
+    return repo
+
+@pytest.fixture
+def user_repository(user_commercial, user_support, user_gestion):
+    repo = FakeUserRepository()
+    repo.save(user_commercial)
+    repo.save(user_support)
+    repo.save(user_gestion)
     return repo
 
 @pytest.fixture(scope="function")
