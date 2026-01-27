@@ -28,7 +28,7 @@ class CreateUserResponse:
     error: Optional[str] = None
 
 
-class CreateClientUseCase:
+class CreateUserUseCase:
     """Use case for creating a new client"""
 
     def __init__(self, user_repository: UserRepository, password_hasher: PasswordHasherInterface):
@@ -39,7 +39,7 @@ class CreateClientUseCase:
 
         policy = UserPolicy(request.current_user)
 
-        if not policy.can_create_client():
+        if not policy.can_create_user():
             return CreateUserResponse(
                 success=False,
                 error="Seuls les membres gestion peuvent créer des utilisateurs"
@@ -52,16 +52,16 @@ class CreateClientUseCase:
 
         hashed_password = self.password_hasher.hash_password(request.password)
 
-        client = User(
+        user = User(
             id = None,
             fullname=request.fullname,
             email = email,
             password= hashed_password,
             role = Role(request.role),
         )
-        saved_client = self.repository.save(client)
+        saved_user = self.repository.save(user)
 
-        return CreateUserResponse(success=True, user=saved_client)
+        return CreateUserResponse(success=True, user=saved_user)
 
 ################################################################################################
 @dataclass
@@ -81,7 +81,7 @@ class UpdateUserResponse:
     error: Optional[str] = None
 
 
-class UpdateClientUseCase:
+class UpdateUserUseCase:
     """
     Use case for updating associated client.
     """
@@ -91,7 +91,7 @@ class UpdateClientUseCase:
     def execute(self, request: UpdateUserRequest):
         # Permission liée au role
         policy = UserPolicy(request.current_user)
-        if not policy.can_update_client():
+        if not policy.can_update_user():
             return UpdateUserResponse(
                 success=False,
                 error="Seuls les membres commerciaux peuvent modifier des clients"
@@ -121,9 +121,9 @@ class UpdateClientUseCase:
             email = email,
         )
 
-        updated_client = self.repository.save(user)
+        updated_user = self.repository.save(user)
 
-        return UpdateUserResponse(success=True, user=updated_client)
+        return UpdateUserResponse(success=True, user=updated_user)
 
 ################################################################################################
 
@@ -148,7 +148,6 @@ class ListUserUseCase:
 @dataclass
 class GetUserRequest:
     user_id: int
-    current_user: User
 
 
 @dataclass
@@ -158,7 +157,7 @@ class GetUserResponse:
     error: Optional[str] = None
 
 
-class GetClientUseCase:
+class GetUserUseCase:
     def __init__(self, user_repository: UserRepository):
         self.repository = user_repository
 
@@ -194,7 +193,7 @@ class DeleteUserUseCase:
     def execute(self, request: DeleteUserRequest):
 
         policy = UserPolicy(request.current_user)
-        if not policy.can_delete_client():
+        if not policy.can_delete_user():
             return DeleteUserResponse(
                 success=False,
                 error="Seuls les membres gestions peuvent supprimer des utilisateurs"
