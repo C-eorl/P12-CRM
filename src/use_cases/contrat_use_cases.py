@@ -40,6 +40,8 @@ class CreateContratUseCase:
                 error="Seuls les membres gestion peuvent créer des contrats"
             )
 
+        # TODO verification si client_id et commercial_id existe
+
         contrat = Contrat(
             id=None,
             client_id=request.client_id,
@@ -89,6 +91,12 @@ class UpdateContratUseCase:
                 success=False,
                 error="Vous n'avez pas les droits pour modifier ce contrat"
             )
+
+        if request.contrat_amount is not None:
+            contrat.contrat_amount = Money(request.contrat_amount)
+
+        if request.status is not None:
+            contrat.status = request.status
 
         updated_contrat = self.repository.save(contrat)
         return UpdateContratResponse(success=True, contrat=updated_contrat)
@@ -201,11 +209,11 @@ class SignContratUseCase:
     def __init__(self, contrat_repository: ContratRepository):
         self.repository = contrat_repository
 
-    def execute(self, request: GetContratRequest) -> GetContratResponse:
+    def execute(self, request: SignContratRequest) -> SignContratResponse:
 
         contrat = self.repository.find_by_id(request.contrat_id)
         if not contrat:
-            return GetContratResponse(
+            return SignContratResponse(
                 success=False,
                 error="Contrat non trouvé"
             )
@@ -213,10 +221,10 @@ class SignContratUseCase:
         try:
             contrat.sign()
         except BusinessRuleViolation as e:
-            return GetContratResponse(success=False, error=str(e))
+            return SignContratResponse(success=False, error=str(e))
 
         self.repository.save(contrat)
-        return GetContratResponse(success=True, contrat=contrat)
+        return SignContratResponse(success=True, contrat=contrat)
 
 ##############################################################################
 @dataclass

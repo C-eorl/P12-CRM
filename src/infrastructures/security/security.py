@@ -21,33 +21,32 @@ class BcryptPasswordHasher:
 
     def verify_password(self, password: str, hashed: str) -> bool:
         """Verify a hashed password """
-        if bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8')):
-            return True
-        return False
+        return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
 
 
 class JWTTokenManager:
     def __init__(self):
-        self.expiration = int(os.getenv("JWT_EXPIRATION"))
+        self.expiration = int(os.getenv("JWT_EXPIRATION_HOURS"))
         self.algorithm = "HS256"
         self.secret_key = os.getenv("JWT_SECRET_KEY")
 
     def create_token(self, user_id: int) -> str:
         """Create a JWT token for user"""
+        now = datetime.utcnow()
         payload = {
             'user_id': user_id,
-            'exp': datetime.now() + timedelta(hours=self.expiration),
-            'iat': datetime.now(),
+            'iat': int(now.timestamp()),
+            'exp': int((now + timedelta(hours=self.expiration)).timestamp()),
         }
         token = jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
-
         return token
 
-    def decode_token(self, token: str) -> Optional[int]:
+
+    def decode_token(self, token: str) -> Optional[dict]:
         """Decode JWT token"""
         try:
             payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
-            return payload['user_id']
+            return payload
         except jwt.ExpiredSignatureError:
             return None
         except jwt.InvalidTokenError:
