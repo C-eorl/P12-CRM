@@ -21,7 +21,7 @@ class CreateEventRequest:
     location: str
     attendees: int
     notes: str
-    current_user: User
+    current_user: dict
 
 
 @dataclass
@@ -39,7 +39,7 @@ class CreateEventUseCase:
 
     def execute(self, request: CreateEventRequest) -> CreateEventResponse:
 
-        policy = UserPolicy(request.current_user)
+        policy = UserPolicy(request.current_user.get("user_id"))
         if not policy.can_create_contrat():
             return CreateEventResponse(
                 success=False,
@@ -74,7 +74,7 @@ class UpdateEventRequest:
     location: Optional[str]
     attendees: Optional[int]
     notes: Optional[str]
-    current_user: User
+    current_user: dict
 
 
 @dataclass
@@ -99,7 +99,7 @@ class UpdateEventUseCase:
                 error="Événement non trouvé"
             )
 
-        if not event.can_be_updated_by(request.current_user):
+        if not event.can_be_updated_by(request.current_user.get("user_id")):
             return UpdateEventResponse(
                 success=False,
                 error="Vous n'avez pas les droits pour modifier cette évènement"
@@ -139,7 +139,7 @@ class ListEventUseCase:
 @dataclass
 class GetEventRequest:
     event_id: int
-    current_user: User
+    current_user: dict
 
 
 @dataclass
@@ -170,7 +170,7 @@ class GetEventUseCase:
 @dataclass
 class DeleteEventRequest:
     event_id: int
-    current_user: User
+    current_user: dict
 
 
 @dataclass
@@ -187,7 +187,7 @@ class DeleteEventUseCase:
 
     def execute(self, request: DeleteEventRequest) -> DeleteEventResponse:
 
-        policy = UserPolicy(request.current_user)
+        policy = UserPolicy(request.current_user.get("user_role"))
         if not policy.can_delete_contrat():
             return DeleteEventResponse(
                 success=False,
@@ -210,7 +210,7 @@ class DeleteEventUseCase:
 class AssignSupportEventRequest:
     event_id: int
     support_user_id: int
-    current_user: User
+    current_user: dict
 
 @dataclass
 class AssignSupportEventResponse:
@@ -224,7 +224,7 @@ class AssignSupportEventUseCase:
         self.user_repository = user_repository
 
     def execute(self, request: AssignSupportEventRequest) -> AssignSupportEventResponse:
-        policy = UserPolicy(request.current_user)
+        policy = UserPolicy(request.current_user.get("user_role"))
         if not policy.can_assign_support():
             return AssignSupportEventResponse(
                 success=False,

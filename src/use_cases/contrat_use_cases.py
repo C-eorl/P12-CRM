@@ -15,7 +15,7 @@ class CreateContratRequest:
     client_id: int
     commercial_contact_id: int
     contrat_amount: Money
-    current_user: User
+    current_user: dict
 
 
 @dataclass
@@ -33,7 +33,7 @@ class CreateContratUseCase:
 
     def execute(self, request: CreateContratRequest) -> CreateContratResponse:
 
-        policy = UserPolicy(request.current_user)
+        policy = UserPolicy(request.current_user.get('user_role'))
         if not policy.can_create_contrat():
             return CreateContratResponse(
                 success=False,
@@ -60,7 +60,7 @@ class UpdateContratRequest:
     contrat_id: int
     contrat_amount: Optional[Money]
     status: Optional[ContractStatus]
-    current_user: User
+    current_user: dict
 
 
 @dataclass
@@ -86,7 +86,7 @@ class UpdateContratUseCase:
                 error="Contrat non trouvé"
             )
 
-        if not contrat.can_be_updated_by(request.current_user):
+        if not contrat.can_be_updated_by(request.current_user.get('user_id')):
             return UpdateContratResponse(
                 success=False,
                 error="Vous n'avez pas les droits pour modifier ce contrat"
@@ -123,7 +123,7 @@ class ListContratUseCase:
 @dataclass
 class GetContratRequest:
     contrat_id: int
-    current_user: User
+    current_user: dict
 
 
 @dataclass
@@ -154,7 +154,7 @@ class GetContratUseCase:
 @dataclass
 class DeleteContratRequest:
     contrat_id: int
-    current_user: User
+    current_user: dict
 
 
 @dataclass
@@ -171,7 +171,7 @@ class DeleteContratUseCase:
 
     def execute(self, request: DeleteContratRequest) -> DeleteContratResponse:
 
-        policy = UserPolicy(request.current_user)
+        policy = UserPolicy(request.current_user.get('user_role'))
         if not policy.can_delete_contrat():
             return DeleteContratResponse(
                 success=False,
@@ -193,7 +193,7 @@ class DeleteContratUseCase:
 @dataclass
 class SignContratRequest:
     contrat_id: int
-    current_user: User
+    current_user: dict
 
 
 @dataclass
@@ -231,7 +231,7 @@ class SignContratUseCase:
 class RecordPaymentContratRequest:
     contrat_id: int
     payment: int
-    current_user: User
+    current_user: dict
 
 
 @dataclass
