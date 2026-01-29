@@ -18,7 +18,7 @@ class CreateClientRequest:
     email: str
     telephone: str
     company_name: str
-    current_user: User
+    current_user: dict
 
 
 @dataclass
@@ -37,7 +37,7 @@ class CreateClientUseCase:
 
     def execute(self, request: CreateClientRequest) -> CreateClientResponse:
 
-        policy = UserPolicy(request.current_user)
+        policy = UserPolicy(request.current_user.get("user_role"))
 
         if not policy.can_create_client():
             return CreateClientResponse(
@@ -57,7 +57,7 @@ class CreateClientUseCase:
             email = email,
             telephone = telephone,
             company_name=request.company_name,
-            commercial_contact_id=request.current_user.id
+            commercial_contact_id=request.current_user.get("user_id")
         )
         saved_client = self.repository.save(client)
 
@@ -71,7 +71,7 @@ class UpdateClientRequest:
     email: Optional[str]
     telephone: Optional[str]
     company_name: Optional[str]
-    current_user: User
+    current_user: dict
 
 
 @dataclass
@@ -90,7 +90,7 @@ class UpdateClientUseCase:
 
     def execute(self, request: UpdateClientRequest):
         # Permission liée au role
-        policy = UserPolicy(request.current_user)
+        policy = UserPolicy(request.current_user.get("user_role"))
         if not policy.can_update_client():
             return UpdateClientResponse(
                 success=False,
@@ -105,7 +105,7 @@ class UpdateClientUseCase:
             )
 
         # Permission liée à l'association
-        if not client.can_be_updated_by(request.current_user):
+        if not client.can_be_updated_by(request.current_user.get("user_id")):
             return UpdateClientResponse(
                 success=False,
                 error="Vous n'êtes pas associé au client"
@@ -165,7 +165,7 @@ class ListClientUseCase:
 @dataclass
 class GetClientRequest:
     client_id: int
-    current_user: User
+    current_user: dict
 
 
 @dataclass
@@ -195,7 +195,7 @@ class GetClientUseCase:
 @dataclass
 class DeleteClientRequest:
     client_id: int
-    current_user: User
+    current_user: dict
 
 
 @dataclass
@@ -210,7 +210,7 @@ class DeleteClientUseCase:
 
     def execute(self, request: DeleteClientRequest):
 
-        policy = UserPolicy(request.current_user)
+        policy = UserPolicy(request.current_user.get("user_role"))
         if not policy.can_delete_client():
             return DeleteClientResponse(
                 success=False,
@@ -225,7 +225,7 @@ class DeleteClientUseCase:
             )
 
         # Permission liée à l'association
-        if not client.can_be_updated_by(request.current_user):
+        if not client.can_be_updated_by(request.current_user.get("user_id")):
             return DeleteClientResponse(
                 success=False,
                 error="Vous n'êtes pas associé au client"
