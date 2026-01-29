@@ -9,8 +9,8 @@ from src.domain.entities.entities import User, Client, Contrat, Event
 from src.domain.entities.enums import Role, ContractStatus
 from src.domain.entities.value_objects import Email, Telephone, Money
 from src.infrastructures.database.models import Base
-from src.infrastructures.repositories.SQLAchemy_repository import SQLAchemyClientRepository, SQLAchemyUserRepository, \
-    SQLAchemyContratRepository, SQLAchemyEventRepository
+from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyClientRepository, SQLAlchemyUserRepository, \
+    SQLAlchemyContratRepository, SQLAlchemyEventRepository
 from src.infrastructures.repositories.fake_client_repository import FakeClientRepository, FakeUserRepository
 
 from dotenv import load_dotenv
@@ -120,16 +120,16 @@ def session():
 
 @pytest.fixture
 def client_SQLAlchemy_repository(session):
-    return SQLAchemyClientRepository(session)
+    return SQLAlchemyClientRepository(session)
 
 @pytest.fixture
 def user_SQLAlchemy_repository(session):
-    return SQLAchemyUserRepository(session)
+    return SQLAlchemyUserRepository(session)
 
 @pytest.fixture
 def contrat_SQLAlchemy_repository(session):
-    return SQLAchemyContratRepository(session)
+    return SQLAlchemyContratRepository(session)
 
 @pytest.fixture
 def event_SQLAlchemy_repository(session):
-    return SQLAchemyEventRepository(session)
+    return SQLAlchemyEventRepository(session)
