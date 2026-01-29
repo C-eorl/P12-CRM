@@ -174,7 +174,7 @@ class Event:
         if start_date is not None:
             if not isinstance(start_date, datetime):
                 raise BusinessRuleViolation("la date de début doit être une date valide")
-            if self.start_date < datetime.now():
+            if start_date < datetime.now():
                 raise BusinessRuleViolation(
                     "La date de début est déjà passé"
                 )
@@ -183,7 +183,7 @@ class Event:
         if end_date is not None:
             if not isinstance(end_date, datetime):
                 raise BusinessRuleViolation("la date de début doit être une date valide")
-            if self.end_date <= self.start_date:
+            if end_date <= start_date:
                 raise BusinessRuleViolation(
                     "La date de fin doit être après la date de début"
                 )
@@ -209,6 +209,8 @@ class Event:
             if not isinstance(name, str):
                 raise BusinessRuleViolation("Les notes doivent être du texte")
             self.notes = notes
+
+        self.updated_at = datetime.now()
 
     def __str__(self):
         support = f"Support: {self.support_contact_id}" if self.support_contact_id else "Sans Support"
