@@ -16,8 +16,8 @@ class CreateUserRequest:
     fullname: str
     email: str
     password: str
-    role: str
-    current_user: User
+    role: Role
+    current_user: dict
 
 
 @dataclass
@@ -37,7 +37,7 @@ class CreateUserUseCase:
 
     def execute(self, request: CreateUserRequest) -> CreateUserResponse:
 
-        policy = UserPolicy(request.current_user)
+        policy = UserPolicy(request.current_user.get("user_role"))
 
         if not policy.can_create_user():
             return CreateUserResponse(
@@ -71,7 +71,7 @@ class UpdateUserRequest:
     email: Optional[str]
     # password
     # role
-    current_user: User
+    current_user: dict
 
 
 @dataclass
@@ -90,11 +90,11 @@ class UpdateUserUseCase:
 
     def execute(self, request: UpdateUserRequest):
         # Permission liée au role
-        policy = UserPolicy(request.current_user)
+        policy = UserPolicy(request.current_user.get("user_role"))
         if not policy.can_update_user():
             return UpdateUserResponse(
                 success=False,
-                error="Seuls les membres commerciaux peuvent modifier des clients"
+                error="Seuls les membres gestion peuvent modifier des clients"
             )
 
         user = self.repository.find_by_id(request.user_id)
@@ -148,6 +148,7 @@ class ListUserUseCase:
 @dataclass
 class GetUserRequest:
     user_id: int
+    current_user: dict
 
 
 @dataclass
@@ -177,7 +178,7 @@ class GetUserUseCase:
 @dataclass
 class DeleteUserRequest:
     user_id: int
-    current_user: User
+    current_user: dict
 
 
 @dataclass
@@ -192,7 +193,7 @@ class DeleteUserUseCase:
 
     def execute(self, request: DeleteUserRequest):
 
-        policy = UserPolicy(request.current_user)
+        policy = UserPolicy(request.current_user.get("user_role"))
         if not policy.can_delete_user():
             return DeleteUserResponse(
                 success=False,
