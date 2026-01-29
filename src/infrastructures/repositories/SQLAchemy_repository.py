@@ -12,7 +12,7 @@ from src.infrastructures.database.models import ClientModel, UserModel, ContratM
 ###########################################################################################
 #                       CLIENT
 ###########################################################################################
-class SQLAchemyClientRepository:
+class SQLAlchemyClientRepository:
     """SQL Alchemy Client repository """
     def __init__(self, session: Session):
         self.session = session
@@ -83,7 +83,7 @@ class SQLAchemyClientRepository:
 ###########################################################################################
 #                       USER
 ###########################################################################################
-class SQLAchemyUserRepository:
+class SQLAlchemyUserRepository:
     """SQL Alchemy User repository """
     def __init__(self, session: Session):
         self.session = session
@@ -171,7 +171,7 @@ class SQLAchemyUserRepository:
 ###########################################################################################
 #                       CONTRAT
 ###########################################################################################
-class SQLAchemyContratRepository:
+class SQLAlchemyContratRepository:
     """SQL Alchemy Contrat repository """
     def __init__(self, session: Session):
         self.session = session
@@ -262,7 +262,7 @@ class SQLAchemyContratRepository:
 ###########################################################################################
 #                       EVENT
 ###########################################################################################
-class SQLAchemyEventRepository:
+class SQLAlchemyEventRepository:
     """SQL Alchemy Event repository """
 
     def __init__(self, session: Session):
