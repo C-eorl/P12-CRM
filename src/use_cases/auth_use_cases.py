@@ -32,7 +32,7 @@ class AuthenticateUseCase:
         if not user:
             return AuthenticateResponse(
                 success=False,
-                error="Email ou mot de passe incorrect"
+                error="Aucun compte lié a cette email"
             )
 
         if not self.password_hasher.verify_password(request.password, user.password):
