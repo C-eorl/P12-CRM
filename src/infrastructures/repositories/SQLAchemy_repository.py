@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from sqlalchemy import select
+from sqlalchemy import select, exists
 from sqlalchemy.orm import Session
 
 from src.domain.entities.entities import Client, User, Contrat, Event
@@ -44,6 +44,11 @@ class SQLAlchemyClientRepository:
 
         self.session.commit()
         return self._to_entity(db_client)
+
+    def exist(self, client_id: int) -> bool:
+        """Checks if a client exists in the database"""
+        stmt = select(exists().where(ClientModel.id == client_id))
+        return self.session.execute(stmt).scalar()
 
     def find_by_id(self, client_id: int) -> Optional[Client]:
         """Finds a client by its id"""
@@ -114,6 +119,11 @@ class SQLAlchemyUserRepository:
 
         self.session.commit()
         return self._to_entity(db_user)
+
+    def exist(self, user_id: int) -> bool:
+        """Checks if a user exists in the database"""
+        stmt = select(exists().where(UserModel.id == user_id))
+        return self.session.execute(stmt).scalar()
 
     def find_by_id(self, user_id: int) -> Optional[User]:
         """Finds a user by its id"""
@@ -204,6 +214,11 @@ class SQLAlchemyContratRepository:
 
         self.session.commit()
         return self._to_entity(db_contrat)
+
+    def exist(self, contrat_id: int) -> bool:
+        """Checks if a contrat exists in the database"""
+        stmt = select(exists().where(ContratModel.id == contrat_id))
+        return self.session.execute(stmt).scalar()
 
     def find_by_id(self, contrat_id: int) -> Optional[Contrat]:
         """Finds a contrat by its id"""
@@ -305,8 +320,13 @@ class SQLAlchemyEventRepository:
         self.session.commit()
         return self._to_entity(db_event)
 
+    def exist(self, event_id: int) -> bool:
+        """Checks if a client exists in the database"""
+        stmt = select(exists().where(EventModel.id == event_id))
+        return self.session.execute(stmt).scalar()
+
     def find_by_id(self, event_id: int) -> Optional[Event]:
-        """Finds a event by its id"""
+        """Finds event by its id"""
         db_event = self.session.get(EventModel, event_id)
 
         if db_event is None:
