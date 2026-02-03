@@ -58,7 +58,9 @@
   },
   "SUPPORT": {
         "EVENT": {
-              "update": {}
+              "update": {
+                    "support_contact_id": "user_current_id"
+              }
         }
   }
 }
