@@ -1,0 +1,64 @@
+{
+  "ADMIN": {
+        "CLIENT": {
+              "create": {},
+              "update": {},
+              "delete": {}
+        },
+        "CONTRAT": {
+              "create": {},
+              "update": {},
+              "delete": {},
+              "sign": {},
+              "pay": {}
+        },
+        "EVENT": {
+              "create": {},
+              "update": {},
+              "delete": {}
+        },
+        "USER": {
+              "create": {},
+              "update": {},
+              "delete": {}
+        }
+  },
+  "COMMERCIAL": {
+        "CLIENT": {
+              "create": {},
+              "update": {
+                "commercial_contact_id": "user_current_id"
+              }
+        },
+        "CONTRAT": {
+              "modify": {
+                  "commercial_contact_id": "user_current_id"
+              },
+              "sign": {
+                  "commercial_contact_id": "user_current_id"
+              }
+        },
+        "EVENT": {
+              "create": {}
+        }
+      },
+  "GESTION": {
+        "USER": {
+              "create": {},
+              "update": {},
+              "delete": {}
+        },
+        "CONTRAT": {
+              "create": {},
+              "update": {}
+        },
+        "EVENT": {
+              "assign": {}
+        }
+  },
+  "SUPPORT": {
+        "EVENT": {
+              "update": {}
+        }
+  }
+}
