@@ -10,4 +10,3 @@ class Role(Enum):
 class ContractStatus(Enum):
     SIGNED = "SIGNED"
     UNSIGNED = "UNSIGNED"
-    CANCELED = "CANCELED"
