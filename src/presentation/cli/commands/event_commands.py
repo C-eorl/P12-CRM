@@ -4,9 +4,10 @@ from typing import Optional
 import typer
 from rich.console import Console
 
-from src.domain.entities.entities import User, Event
+from helpers.helpers import normalize
+from src.domain.entities.entities import Event
 from src.domain.entities.enums import Role
-from src.domain.entities.value_objects import Email
+from src.domain.policies.user_policy import RequestPolicy
 from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyEventRepository, SQLAlchemyUserRepository
 from src.use_cases.event_use_cases import ListEventUseCase, GetEventUseCase, GetEventRequest, UpdateEventUseCase, \
     UpdateEventRequest, CreateEventUseCase, CreateEventRequest, AssignSupportEventRequest, AssignSupportEventUseCase
@@ -18,35 +19,53 @@ console = Console()
 def permission(ctx:typer.Context):
     if ctx.invoked_subcommand not in ['show', "list"]:
         if ctx.invoked_subcommand == "assign":
-            if ctx.obj["current_user"]["user_role"] != Role.GESTION:
+            if ctx.obj["current_user"]["user_role"] not in [Role.GESTION, Role.ADMIN]:
                 console.print("[red]Vous êtes pas authorisé à utiliser cette commande[/red]")
                 raise typer.Exit()
 
         if ctx.invoked_subcommand == "create":
-            if ctx.obj["current_user"]["user_role"] != Role.COMMERCIAL:
+            if ctx.obj["current_user"]["user_role"] not in [Role.COMMERCIAL, Role.ADMIN]:
                 console.print("[red]Vous êtes pas authorisé à utiliser cette commande[/red]")
                 raise typer.Exit()
 
         if ctx.invoked_subcommand == "update":
-            if ctx.obj["current_user"]["user_role"] != Role.SUPPORT:
+            if ctx.obj["current_user"]["user_role"] not in [Role.SUPPORT, Role.ADMIN]:
                 console.print("[red]Vous êtes pas authorisé à utiliser cette commande[/red]")
                 raise typer.Exit()
+    ctx.obj["ressource"] = "EVENT"
 
 @event_app.command(help="Créer un évènement")
 def create(
         ctx: typer.Context,
-        name: str = typer.Option(..., prompt=True),
-        contrat_id: int = typer.Option(..., prompt=True),
-        client_id: int = typer.Option(..., prompt=True),
-        support_contact_id: Optional[int] = typer.Option(..., prompt=True),
+        name: str = typer.Option(None, prompt=True),
+        contrat_id: int = typer.Option(None, prompt=True),
+        client_id: int = typer.Option(None, prompt=True),
+        support_contact_id: Optional[int] = typer.Option("", prompt=True),
         start_date: datetime = typer.Option(..., prompt=True),
         end_date: datetime = typer.Option(..., prompt=True),
         location: str = typer.Option(..., prompt=True),
         attendees: int = typer.Option(..., prompt=True),
         notes: str = typer.Option(..., prompt=True),
 ):
-
-    repo = SQLAlchemyEventRepository(ctx.obj["session"])
+    """
+    Command for create Event
+    :param ctx: typer.Context
+    :param name: name of the event
+    :param contrat_id: ID contrat linked to the event
+    :param client_id: ID client linked to the event
+    :param support_contact_id: ID support contact linked to the event
+    :param start_date: start date of the event
+    :param end_date: end date of the event
+    :param location: location of the event
+    :param attendees: number of attendees
+    :param notes: various notes
+    :return: None
+    """
+    policy = RequestPolicy(
+        user=ctx.obj["current_user"],
+        ressource=ctx.obj["ressource"],
+        action="create"
+    )
 
     request = CreateEventRequest(
         name= name,
@@ -58,35 +77,52 @@ def create(
         location=location,
         attendees=attendees,
         notes=notes,
-        current_user =  ctx.obj["current_user"]
+        authorization=policy
     )
+    repo = SQLAlchemyEventRepository(ctx.obj["session"])
     use_case = CreateEventUseCase(repo)
     response = use_case.execute(request)
 
-    console.print(f"\n[bold]Évènement #{response.event.id} créé[/bold]")
-    _display_data(response.event)
+    if response.success:
+        console.print(f"\n[bold]Evènement #{response.event.id} créé[/bold]")
+        _display_data(response.event)
+    else:
+        console.print(f"[red] {response.error} [/red]")
+
 
 @event_app.command(help="Modifier un évènement")
-def update(
-        ctx: typer.Context,
-        event_id: int,
-        name: str = typer.Option('', prompt=True),
-        start_date: datetime = typer.Option('', prompt=True, ),
-        end_date: datetime = typer.Option('', prompt=True),
-        location: str = typer.Option('', prompt=True),
-        attendees: int = typer.Option(0, prompt=True),
-        notes: str = typer.Option('', prompt=True),
-        ):
+def update(ctx: typer.Context, event_id: int):
+    """
+    Command for update Event
+    :param ctx: typer.Context
+    :param event_id: ID of the event
+    :return: None
+    """
+    repo = SQLAlchemyEventRepository(ctx.obj["session"])
+    use_case = UpdateEventUseCase(repo)
 
-    def normalize(value: str | None) -> str | None:
-        return value if value not in ('', 0) else None
+    if not repo.exist(event_id):
+        console.print(f"[red] Client non trouvé [/red]")
+        raise typer.Exit()
+
+    policy = RequestPolicy(
+        user=ctx.obj["current_user"],
+        ressource=ctx.obj["ressource"],
+        action="update"
+    )
+
+    name = typer.prompt("Nom de l'évènement: ", "")
+    start_date= typer.prompt('Date et heure de début (2000-00-00 00:00:00): ', "")
+    end_date = typer.prompt('Date et heure de fin (2000-00-00 00:00:00): ', "")
+    location = typer.prompt('Emplacement: ', "")
+    attendees = typer.prompt("Nombre de participant: ", "")
+    notes = typer.prompt("Notes: ", "")
 
     name = normalize(name)
     location = normalize(location)
     attendees = normalize(attendees)
     notes = normalize(notes)
 
-    repo = SQLAlchemyEventRepository(ctx.obj["session"])
     request = UpdateEventRequest(
         event_id=event_id,
         name=name,
@@ -95,70 +131,99 @@ def update(
         location=location,
         attendees=attendees,
         notes=notes,
-        current_user=ctx.obj["current_user"]
+        authorization=policy
     )
-    use_case = UpdateEventUseCase(repo)
     response = use_case.execute(request)
 
-    console.print(f"\n[bold]Évènement #{response.event.id} modifié[/bold]")
-    _display_data(response.event)
+    if response.success:
+        console.print(f"\n[bold]Evènement #{response.event.id} modifié[/bold]")
+        _display_data(response.event)
+    else:
+        console.print(f"[red] {response.error} [/red]")
 
 
 @event_app.command(help="Afficher un évènement")
 def show(ctx : typer.Context, event_id: int):
-
-    repo = SQLAlchemyEventRepository(ctx.obj["session"])
+    """
+    Command for show one Event
+    :param ctx:  typer.Context
+    :param event_id: ID of the event
+    :return: None
+    """
 
     request = GetEventRequest(
         event_id=event_id,
-        current_user= ctx.obj["current_user"]
     )
+    repo = SQLAlchemyEventRepository(ctx.obj["session"])
     use_case = GetEventUseCase(repo)
     response = use_case.execute(request)
 
-
-    console.print(f"\n[bold]Évènement #{response.event.id}[/bold]")
-    _display_data(response.event)
+    if response.success:
+        console.print(f"\n[bold]Evènement #{response.event.id}[/bold]")
+        _display_data(response.event)
+    else:
+        console.print(f"[red] {response.error} [/red]")
 
 @event_app.command(help="Afficher tous les évènement")
 def list(ctx: typer.Context):
+    """
+    Command for list Event
+    :param ctx: typer.Context
+    :return: None
+    """
     repo = SQLAlchemyEventRepository(ctx.obj["session"])
     use_case = ListEventUseCase(repo)
-
     response = use_case.execute()
 
-    for event in response.events:
-        console.print(f"\n[bold]Client #{event.id}[/bold]")
-        _display_data(event)
+    if response.success:
+        for event in response.events:
+            console.print(f"\n[bold]Client #{event.id}[/bold]")
+            _display_data(event)
+    else:
+        console.print(f"[red] {response.error} [/red]")
+
 
 @event_app.command(help="Assigner un Utilisateur Support a l'évènement")
-def assign(
-        ctx: typer.Context,
-        event_id: int,
-        support_user_id: int = typer.Option(None),
-        ):
-
+def assign(ctx: typer.Context, event_id: int):
+    """
+    Command for assign user support to event
+    :param ctx: typer Context
+    :param event_id: ID of the event
+    :return: None
+    """
     session = ctx.obj["session"]
     repo = SQLAlchemyEventRepository(session)
     user_repo = SQLAlchemyUserRepository(session)
+
+    if not repo.exist(event_id):
+        console.print(f"[red] Client non trouvé [/red]")
+        raise typer.Exit()
+
+    policy = RequestPolicy(
+        user=ctx.obj["current_user"],
+        ressource=ctx.obj["ressource"],
+        action="assign"
+    )
+
+    support_user_id= typer.prompt("Id utilisateur Support: "),
+
     request = AssignSupportEventRequest(
         event_id=event_id,
-        support_user_id=support_user_id,
-        current_user=User(
-            id=5,
-            fullname="test test",
-            email=Email("test@test.com"), password="sfsefs",
-            role=Role.GESTION
-        )
+        support_user_id=int(support_user_id),
+        authorization=policy
     )
     use_case = AssignSupportEventUseCase(repo, user_repo)
     response = use_case.execute(request)
 
+    if response.success:
+        console.print(f"\n[bold]Évènement #{event_id} - assigné à User #: {support_user_id}[bold]")
+    else:
+        console.print(f"[red] {response.error} [/red]")
     console.print(f"\n[bold]Évènement #{event_id} - assigné à User #: {support_user_id}[bold]")
 
 
 def _display_data(data: Event):
-
+    """ Display data of Event"""
     console.print(f"  Nom: ID {data.name}")
     console.print(f"  Contrat: ID {data.contrat_id}")
     console.print(f"  Client: ID {data.client_id}")

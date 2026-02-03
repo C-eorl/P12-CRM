@@ -1,116 +1,203 @@
-from typing import Optional
-
 import typer
 from rich.console import Console
 
-from src.domain.entities.entities import User, Client
+from helpers.helpers import normalize
+
+from src.domain.entities.entities import  Client
 from src.domain.entities.enums import Role
+from src.domain.policies.user_policy import RequestPolicy
 from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyClientRepository
 from src.use_cases.client_use_cases import GetClientUseCase, GetClientRequest, CreateClientRequest, CreateClientUseCase, \
-    ListClientUseCase, UpdateClientRequest, UpdateClientUseCase
+    ListClientUseCase, UpdateClientRequest, UpdateClientUseCase, DeleteClientUseCase, DeleteClientRequest
 
 client_app = typer.Typer()
 console = Console()
 
 @client_app.callback()
 def permission(ctx:typer.Context):
+    """Callback - for show, list commands, verify user role """
     if ctx.invoked_subcommand not in ['show', "list"]:
-        if ctx.obj["current_user"]["user_role"] != Role.COMMERCIAL:
+        if ctx.obj["current_user"]["user_current_role"] not in  [Role.COMMERCIAL, Role.ADMIN]:
             console.print("[red]Vous êtes pas authorisé à utiliser cette commande[/red]")
             raise typer.Exit()
-
+    ctx.obj["ressource"] = "CLIENT"
 
 @client_app.command()
 def create(
         ctx: typer.Context,
-        fullname: str = typer.Option(..., prompt=True),
-        email: str = typer.Option(..., prompt=True),
-        telephone: str = typer.Option(..., prompt=True),
-        company_name: str = typer.Option(..., prompt=True),
+        fullname: str = typer.Option(prompt=True),
+        email: str = typer.Option(prompt=True),
+        telephone: str = typer.Option(prompt=True),
+        company_name: str = typer.Option(prompt=True),
 ):
+    """
+    Creates new client
+    :param ctx: context typer
+    :param fullname: fullname client
+    :param email: email client
+    :param telephone: telephone number client
+    :param company_name: name of company client
+    :return: None
+    """
+    # Requête pour l'authorisation
+    policy = RequestPolicy(
+        user=ctx.obj["current_user"],
+        ressource=ctx.obj["ressource"],
+        action="create",
+    )
 
-    repo = SQLAlchemyClientRepository(ctx.obj["session"])
-
+    # Requête avec les données necessaire Use Case
     request = CreateClientRequest(
         fullname=fullname,
         email=email,
         telephone=telephone,
         company_name=company_name,
-        current_user= ctx.obj["current_user"],
+        authorization= policy,
     )
+
+    # Use case
+    repo = SQLAlchemyClientRepository(ctx.obj["session"])
     use_case = CreateClientUseCase(repo)
     response = use_case.execute(request)
 
-    console.print(f"\n[bold]Client #{response.client.id} créé[/bold]")
-    _display_data(response.client)
+    # Affichage selon response.success
+    if response.success:
+        console.print(f"\n[bold]Client #{response.client.id} créé[/bold]")
+        _display_data(response.client)
+    else:
+        console.print(f"[red] {response.error} [/red]")
 
 @client_app.command()
-def update(ctx: typer.Context,
-           client_id: int,
-           fullname: Optional[str] = typer.Option('', prompt=True, show_default=False),
-           email: Optional[str] = typer.Option('', prompt=True, show_default=False),
-           telephone: Optional[str] = typer.Option('', prompt=True, show_default=False),
-           company_name: Optional[str] = typer.Option('', prompt=True, show_default=False),
-           ):
+def update(ctx: typer.Context, client_id: int):
+    """
+    Command for update client
+    :param ctx: typer Context
+    :param client_id: ID of client
+    :return: None
+    """
+    # init
+    repo = SQLAlchemyClientRepository(ctx.obj["session"])
+    use_case = UpdateClientUseCase(repo)
 
-    def normalize(value: str | None) -> str | None:
-        return value if value != '' else None
+    #verification ressource existe
+    if not repo.exist(client_id):
+        console.print(f"[red] Client non trouvé [/red]")
+        raise typer.Exit()
+    # requete autorisation
+    policy = RequestPolicy(
+        user=ctx.obj["current_user"],
+        ressource=ctx.obj["ressource"],
+        action="update",
+    )
+
+
+    fullname = typer.prompt('Nom complet ', default='', show_default=False)
+    email= typer.prompt('Email ', default='',show_default=False)
+    telephone= typer.prompt('Téléphone ', default='',show_default=False)
+    company_name= typer.prompt("Nom de l'entreprise ", default='',show_default=False)
 
     fullname = normalize(fullname)
     email = normalize(email)
     telephone = normalize(telephone)
     company_name = normalize(company_name)
 
-
-
-    repo = SQLAlchemyClientRepository(ctx.obj["session"])
     request = UpdateClientRequest(
         client_id=client_id,
         fullname=fullname,
         email=email,
         telephone=telephone,
         company_name=company_name,
-        current_user=ctx.obj["current_user"]
+        authorization= policy
     )
-    use_case = UpdateClientUseCase(repo)
     response = use_case.execute(request)
 
-    console.print(f"\n[bold]Client #{response.client.id} modifié[/bold]")
-    _display_data(response.client)
+    if response.success:
+        console.print(f"\n[bold]Client #{response.client.id} modifié[/bold]")
+        _display_data(response.client)
+    else:
+        console.print(f"[red] {response.error} [/red]")
 
 
 @client_app.command()
-def show(
-        ctx: typer.Context,
-        client_id: int
-):
-
+def show(ctx: typer.Context, client_id: int):
+    """
+    Command for show one client
+    :param ctx: typer Context
+    :param client_id: ID of client
+    :return: None
+    """
     repo = SQLAlchemyClientRepository(ctx.obj["session"])
+    use_case = GetClientUseCase(repo)
+
+    #verification ressource existe
+    if not repo.exist(client_id):
+        console.print(f"[red] Client non trouvé [/red]")
+        raise typer.Exit()
 
     request = GetClientRequest(
         client_id=client_id,
-        current_user= ctx.obj["current_user"]
     )
-    use_case = GetClientUseCase(repo)
     response = use_case.execute(request)
 
-
-    console.print(f"\n[bold]Client #{response.client.id}[/bold]")
-    _display_data(response.client)
+    if response.success:
+        console.print(f"\n[bold]Client #{response.client.id}[/bold]")
+        _display_data(response.client)
+    else:
+        console.print(f"[red] {response.error} [/red]")
 
 @client_app.command()
 def list(ctx: typer.Context):
+    """
+    Command for list clients
+    :param ctx: typer Context
+    :return: None
+    """
     repo = SQLAlchemyClientRepository(ctx.obj["session"])
     use_case = ListClientUseCase(repo)
-
     response = use_case.execute()
 
-    for client in response.clients:
-        console.print(f"\n[bold]Client #{client.id}[/bold]")
-        _display_data(client)
+    if response.success:
+        for client in response.clients:
+            console.print(f"\n[bold]Client #{client.id}[/bold]")
+            _display_data(client)
+    else:
+        console.print(f"[red] {response.error} [/red]")
 
+@client_app.command()
+def delete(ctx: typer.Context, client_id: int):
+    """
+    Command for delete client
+    :param ctx: typer Context
+    :param client_id: ID of client
+    :return: None
+    """
+    repo = SQLAlchemyClientRepository(ctx.obj["session"])
+    use_case = DeleteClientUseCase(repo)
+
+    #verification ressource existe
+    if not repo.exist(client_id):
+        console.print(f"[red] Client non trouvé [/red]")
+        raise typer.Exit()
+
+    policy = RequestPolicy(
+        user=ctx.obj["current_user"],
+        ressource=ctx.obj["ressource"],
+        action="delete"
+    )
+    request = DeleteClientRequest(
+        client_id=client_id,
+        authorization= policy,
+    )
+
+    response = use_case.execute(request)
+
+    if response.success:
+        console.print(f"\n[bold]Client #{client_id} supprimé[/bold]")
+    else:
+        console.print(f"[red] {response.error} [/red]")
 
 def _display_data(data: Client):
+    """ Display data of Client """
 
     console.print(f"  Nom: {data.fullname}")
     console.print(f"  Email: {data.email}")
