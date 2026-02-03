@@ -7,7 +7,7 @@ from src.domain.entities.entities import User, Event
 from src.domain.entities.enums import ContractStatus
 from src.domain.entities.value_objects import Money
 from src.domain.interfaces.repository import EventRepository, UserRepository
-from src.domain.policies.user_policy import UserPolicy
+from src.domain.policies.user_policy import UserPolicy, RequestPolicy
 
 
 @dataclass
@@ -21,7 +21,7 @@ class CreateEventRequest:
     location: str
     attendees: int
     notes: str
-    current_user: dict
+    authorization: RequestPolicy
 
 
 @dataclass
@@ -39,8 +39,8 @@ class CreateEventUseCase:
 
     def execute(self, request: CreateEventRequest) -> CreateEventResponse:
 
-        policy = UserPolicy(request.current_user.get("user_id"))
-        if not policy.can_create_contrat():
+        policy = UserPolicy(request.authorization)
+        if not policy.is_allowed():
             return CreateEventResponse(
                 success=False,
                 error="Seuls les membres support peuvent créer des évènements"
@@ -74,7 +74,7 @@ class UpdateEventRequest:
     location: Optional[str]
     attendees: Optional[int]
     notes: Optional[str]
-    current_user: dict
+    authorization: RequestPolicy
 
 
 @dataclass
@@ -99,11 +99,14 @@ class UpdateEventUseCase:
                 error="Événement non trouvé"
             )
 
-        if not event.can_be_updated_by(request.current_user.get("user_id")):
+        policy = UserPolicy(request.authorization)
+        request.authorization.context = event
+        if not policy.is_allowed():
             return UpdateEventResponse(
                 success=False,
-                error="Vous n'avez pas les droits pour modifier cette évènement"
+                error="Seuls les membres support peuvent créer des évènements"
             )
+
         event.update_info(
             request.name,
             request.start_date,
@@ -139,7 +142,6 @@ class ListEventUseCase:
 @dataclass
 class GetEventRequest:
     event_id: int
-    current_user: dict
 
 
 @dataclass
@@ -170,7 +172,7 @@ class GetEventUseCase:
 @dataclass
 class DeleteEventRequest:
     event_id: int
-    current_user: dict
+    authorization: RequestPolicy
 
 
 @dataclass
@@ -187,18 +189,18 @@ class DeleteEventUseCase:
 
     def execute(self, request: DeleteEventRequest) -> DeleteEventResponse:
 
-        policy = UserPolicy(request.current_user.get("user_role"))
-        if not policy.can_delete_contrat():
-            return DeleteEventResponse(
-                success=False,
-                error="Seuls les membres gestion peuvent supprimer des contrats"
-            )
-
         event = self.repository.find_by_id(request.event_id)
         if not event:
             return DeleteEventResponse(
                 success=False,
                 error="Evenement non trouvé"
+            )
+
+        policy = UserPolicy(request.authorization)
+        if not policy.is_allowed():
+            return DeleteEventResponse(
+                success=False,
+                error="Seuls les membres administrateur peuvent créer des évènements"
             )
 
         self.repository.delete(event.id)
@@ -210,7 +212,7 @@ class DeleteEventUseCase:
 class AssignSupportEventRequest:
     event_id: int
     support_user_id: int
-    current_user: dict
+    authorization: RequestPolicy
 
 @dataclass
 class AssignSupportEventResponse:
@@ -224,11 +226,12 @@ class AssignSupportEventUseCase:
         self.user_repository = user_repository
 
     def execute(self, request: AssignSupportEventRequest) -> AssignSupportEventResponse:
-        policy = UserPolicy(request.current_user.get("user_role"))
-        if not policy.can_assign_support():
+
+        policy = UserPolicy(request.authorization)
+        if not policy.is_allowed():
             return AssignSupportEventResponse(
                 success=False,
-                error="Seul les membres gestion peuvent supprimer des contrats"
+                error="Seuls les membres support peuvent créer des évènements"
             )
 
         event = self.repository.find_by_id(request.event_id)
@@ -248,7 +251,7 @@ class AssignSupportEventUseCase:
         if not user:
             return AssignSupportEventResponse(
                 success=False,
-                error="Utilisateur non trouvé"
+                error="Utilisateur support non trouvé"
             )
         try:
             event.assign_support(user)

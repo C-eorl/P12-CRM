@@ -7,7 +7,8 @@ from src.domain.entities.exceptions import InvalidEmailError, ValidationError
 from src.domain.entities.value_objects import Email
 from src.domain.interfaces.auth import PasswordHasherInterface
 from src.domain.interfaces.repository import UserRepository
-from src.domain.policies.user_policy import UserPolicy
+from src.domain.policies.user_policy import UserPolicy, RequestPolicy
+
 
 ################################################################################################
 @dataclass
@@ -17,7 +18,7 @@ class CreateUserRequest:
     email: str
     password: str
     role: Role
-    current_user: dict
+    authorization : RequestPolicy
 
 
 @dataclass
@@ -37,9 +38,8 @@ class CreateUserUseCase:
 
     def execute(self, request: CreateUserRequest) -> CreateUserResponse:
 
-        policy = UserPolicy(request.current_user.get("user_role"))
-
-        if not policy.can_create_user():
+        policy = UserPolicy(request.authorization)
+        if not policy.is_allowed():
             return CreateUserResponse(
                 success=False,
                 error="Seuls les membres gestion peuvent créer des utilisateurs"
@@ -71,7 +71,7 @@ class UpdateUserRequest:
     email: Optional[str]
     # password
     # role
-    current_user: dict
+    authorization : RequestPolicy
 
 
 @dataclass
@@ -90,8 +90,8 @@ class UpdateUserUseCase:
 
     def execute(self, request: UpdateUserRequest):
         # Permission liée au role
-        policy = UserPolicy(request.current_user.get("user_role"))
-        if not policy.can_update_user():
+        policy = UserPolicy(request.authorization)
+        if not policy.is_allowed():
             return UpdateUserResponse(
                 success=False,
                 error="Seuls les membres gestion peuvent modifier des clients"
@@ -148,7 +148,6 @@ class ListUserUseCase:
 @dataclass
 class GetUserRequest:
     user_id: int
-    current_user: dict
 
 
 @dataclass
@@ -178,8 +177,7 @@ class GetUserUseCase:
 @dataclass
 class DeleteUserRequest:
     user_id: int
-    current_user: dict
-
+    authorization: RequestPolicy
 
 @dataclass
 class DeleteUserResponse:
@@ -193,8 +191,8 @@ class DeleteUserUseCase:
 
     def execute(self, request: DeleteUserRequest):
 
-        policy = UserPolicy(request.current_user.get("user_role"))
-        if not policy.can_delete_user():
+        policy = UserPolicy(request.authorization)
+        if not policy.is_allowed():
             return DeleteUserResponse(
                 success=False,
                 error="Seuls les membres gestions peuvent supprimer des utilisateurs"
@@ -206,7 +204,6 @@ class DeleteUserUseCase:
                 success=False,
                 error=f"Utilisateur non trouvé"
             )
-
 
         self.repository.delete(user.id)
         return DeleteUserResponse(success=True)

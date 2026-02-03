@@ -7,7 +7,7 @@ from src.domain.entities.enums import ContractStatus
 from src.domain.entities.exceptions import BusinessRuleViolation
 from src.domain.entities.value_objects import Money
 from src.domain.interfaces.repository import ContratRepository
-from src.domain.policies.user_policy import UserPolicy
+from src.domain.policies.user_policy import UserPolicy, RequestPolicy
 
 
 @dataclass
@@ -15,7 +15,7 @@ class CreateContratRequest:
     client_id: int
     commercial_contact_id: int
     contrat_amount: Money
-    current_user: dict
+    authorization: RequestPolicy
 
 
 @dataclass
@@ -33,14 +33,12 @@ class CreateContratUseCase:
 
     def execute(self, request: CreateContratRequest) -> CreateContratResponse:
 
-        policy = UserPolicy(request.current_user.get('user_role'))
-        if not policy.can_create_contrat():
+        policy = UserPolicy(request.authorization)
+        if not policy.is_allowed():
             return CreateContratResponse(
                 success=False,
                 error="Seuls les membres gestion peuvent créer des contrats"
             )
-
-        # TODO verification si client_id et commercial_id existe
 
         contrat = Contrat(
             id=None,
@@ -60,7 +58,7 @@ class UpdateContratRequest:
     contrat_id: int
     contrat_amount: Optional[Money]
     status: Optional[ContractStatus]
-    current_user: dict
+    authorization: RequestPolicy
 
 
 @dataclass
@@ -86,11 +84,15 @@ class UpdateContratUseCase:
                 error="Contrat non trouvé"
             )
 
-        if not contrat.can_be_updated_by(request.current_user.get('user_id')):
+        policy = UserPolicy(request.authorization)
+        request.authorization.context = contrat
+        if not policy.is_allowed():
             return UpdateContratResponse(
                 success=False,
-                error="Vous n'avez pas les droits pour modifier ce contrat"
+                error="Seuls les membres gestion peuvent modifier des contrats"
             )
+
+
 
         if request.contrat_amount is not None:
             contrat.contrat_amount = Money(request.contrat_amount)
@@ -123,7 +125,6 @@ class ListContratUseCase:
 @dataclass
 class GetContratRequest:
     contrat_id: int
-    current_user: dict
 
 
 @dataclass
@@ -154,7 +155,7 @@ class GetContratUseCase:
 @dataclass
 class DeleteContratRequest:
     contrat_id: int
-    current_user: dict
+    authorization: RequestPolicy
 
 
 @dataclass
@@ -171,11 +172,11 @@ class DeleteContratUseCase:
 
     def execute(self, request: DeleteContratRequest) -> DeleteContratResponse:
 
-        policy = UserPolicy(request.current_user.get('user_role'))
-        if not policy.can_delete_contrat():
+        policy = UserPolicy(request.authorization)
+        if not policy.is_allowed():
             return DeleteContratResponse(
                 success=False,
-                error="Seuls les membres gestion peuvent supprimer des contrats"
+                error="Seuls les membres administrateur peuvent supprimer des contrats"
             )
 
         contrat = self.repository.find_by_id(request.contrat_id)
@@ -193,7 +194,7 @@ class DeleteContratUseCase:
 @dataclass
 class SignContratRequest:
     contrat_id: int
-    current_user: dict
+    authorization: RequestPolicy
 
 
 @dataclass
@@ -218,6 +219,14 @@ class SignContratUseCase:
                 error="Contrat non trouvé"
             )
 
+        policy = UserPolicy(request.authorization)
+        request.authorization.context = contrat
+        if not policy.is_allowed():
+            return SignContratResponse(
+                success=False,
+                error="Seuls les membres "" peuvent supprimer des contrats"
+            )
+
         try:
             contrat.sign()
         except BusinessRuleViolation as e:
@@ -231,7 +240,7 @@ class SignContratUseCase:
 class RecordPaymentContratRequest:
     contrat_id: int
     payment: int
-    current_user: dict
+    authorization: RequestPolicy
 
 
 @dataclass
@@ -254,6 +263,14 @@ class RecordPaymentContratUseCase:
             return RecordPaymentContratResponse(
                 success=False,
                 error="Contrat non trouvé"
+            )
+
+        policy = UserPolicy(request.authorization)
+        request.authorization.context = contrat
+        if not policy.is_allowed():
+            return RecordPaymentContratResponse(
+                success=False,
+                error="Seuls les membres "" peuvent supprimer des contrats"
             )
 
         if contrat.is_fully_paid():

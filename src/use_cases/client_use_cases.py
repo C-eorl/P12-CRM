@@ -2,12 +2,12 @@ from dataclasses import dataclass
 from typing import Optional, List
 
 
-from src.domain.entities.entities import Client, User
+from src.domain.entities.entities import Client
 from src.domain.entities.exceptions import ValidationError, InvalidEmailError, InvalidPhoneError
 from src.domain.entities.value_objects import Email, Telephone
 
 from src.domain.interfaces.repository import ClientRepository
-from src.domain.policies.user_policy import UserPolicy
+from src.domain.policies.user_policy import UserPolicy, RequestPolicy
 
 
 ################################################################################################
@@ -18,7 +18,7 @@ class CreateClientRequest:
     email: str
     telephone: str
     company_name: str
-    current_user: dict
+    authorization: RequestPolicy
 
 
 @dataclass
@@ -37,9 +37,9 @@ class CreateClientUseCase:
 
     def execute(self, request: CreateClientRequest) -> CreateClientResponse:
 
-        policy = UserPolicy(request.current_user.get("user_role"))
+        policy = UserPolicy(request.authorization)
 
-        if not policy.can_create_client():
+        if not policy.is_allowed():
             return CreateClientResponse(
                 success=False,
                 error="Seuls les membres commerciaux peuvent créer des clients"
@@ -57,8 +57,8 @@ class CreateClientUseCase:
             email = email,
             telephone = telephone,
             company_name=request.company_name,
-            commercial_contact_id=request.current_user.get("user_id")
-        )
+            commercial_contact_id=request.authorization.user["user_current_id"])
+
         saved_client = self.repository.save(client)
 
         return CreateClientResponse(success=True, client=saved_client)
@@ -71,7 +71,7 @@ class UpdateClientRequest:
     email: Optional[str]
     telephone: Optional[str]
     company_name: Optional[str]
-    current_user: dict
+    authorization: RequestPolicy
 
 
 @dataclass
@@ -90,12 +90,6 @@ class UpdateClientUseCase:
 
     def execute(self, request: UpdateClientRequest):
         # Permission liée au role
-        policy = UserPolicy(request.current_user.get("user_role"))
-        if not policy.can_update_client():
-            return UpdateClientResponse(
-                success=False,
-                error="Seuls les membres commerciaux peuvent modifier des clients"
-            )
 
         client = self.repository.find_by_id(request.client_id)
         if not client:
@@ -104,11 +98,12 @@ class UpdateClientUseCase:
                 error=f"Client non trouvé"
             )
 
-        # Permission liée à l'association
-        if not client.can_be_updated_by(request.current_user.get("user_id")):
+        policy = UserPolicy(request.authorization)
+        request.authorization.context = client
+        if not policy.is_allowed():
             return UpdateClientResponse(
                 success=False,
-                error="Vous n'êtes pas associé au client"
+                error="Seuls les membres commerciaux associé au client peuvent le modifier"
             )
 
         email = telephone = fullname = company_name = None
@@ -165,8 +160,6 @@ class ListClientUseCase:
 @dataclass
 class GetClientRequest:
     client_id: int
-    current_user: dict
-
 
 @dataclass
 class GetClientResponse:
@@ -195,7 +188,7 @@ class GetClientUseCase:
 @dataclass
 class DeleteClientRequest:
     client_id: int
-    current_user: dict
+    authorization: RequestPolicy
 
 
 @dataclass
@@ -210,11 +203,11 @@ class DeleteClientUseCase:
 
     def execute(self, request: DeleteClientRequest):
 
-        policy = UserPolicy(request.current_user.get("user_role"))
-        if not policy.can_delete_client():
+        policy = UserPolicy(request.authorization)
+        if not policy.is_allowed():
             return DeleteClientResponse(
                 success=False,
-                error="Seuls les membres commerciaux peuvent supprimer des clients"
+                error="Seuls les membres administrateur peuvent supprimer des clients"
             )
 
         client = self.repository.find_by_id(request.client_id)
@@ -224,12 +217,6 @@ class DeleteClientUseCase:
                 error=f"Client non trouvé"
             )
 
-        # Permission liée à l'association
-        if not client.can_be_updated_by(request.current_user.get("user_id")):
-            return DeleteClientResponse(
-                success=False,
-                error="Vous n'êtes pas associé au client"
-            )
 
         self.repository.delete(client.id)
         return DeleteClientResponse(success=True)
