@@ -27,7 +27,7 @@ class BcryptPasswordHasher:
 class JWTTokenManager:
     def __init__(self):
         self.expiration = int(os.getenv("JWT_EXPIRATION_HOURS"))
-        self.algorithm = "HS256"
+        self.algorithm = os.getenv("JWT_ALGORITHM")
         self.secret_key = os.getenv("JWT_SECRET_KEY")
 
     def create_token(self, user_id: int) -> str:
@@ -79,3 +79,18 @@ class TokenStore:
     def has_token(cls) -> bool:
         """Vérifie si un token est enregistré"""
         return cls.TOKEN_FILE.exists()
+
+    @classmethod
+    def has_expired(cls) -> bool:
+        """ Check if token has expired """
+        token = cls.get_token()
+        if token is None:
+            return True
+
+        try:
+            jwt.decode(token,os.getenv("JWT_SECRET_KEY"), os.getenv("JWT_ALGORITHM"))
+            return False
+        except jwt.ExpiredSignatureError:
+            return True
+        except jwt.InvalidTokenError:
+            return True
