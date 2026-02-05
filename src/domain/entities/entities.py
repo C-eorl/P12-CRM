@@ -125,20 +125,6 @@ class Event:
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
 
-    def __post_init__(self):
-        """Validation"""
-        if self.start_date < datetime.now():
-            raise BusinessRuleViolation(
-                "La date de début est déjà passé"
-            )
-        if self.end_date <= self.start_date:
-            raise BusinessRuleViolation(
-                "La date de fin doit être après la date de début"
-            )
-        if self.attendees <= 0:
-            raise BusinessRuleViolation(
-                "Le nombre de participants doit être positif"
-            )
 
     def assign_support(self, user: User):
         """Assigned support user for this event"""
