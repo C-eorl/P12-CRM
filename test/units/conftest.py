@@ -1,5 +1,7 @@
 import os
 from datetime import datetime
+from email._policybase import Policy
+
 import pytest
 
 from sqlalchemy import create_engine
@@ -8,10 +10,12 @@ from sqlalchemy.orm import sessionmaker
 from src.domain.entities.entities import User, Client, Contrat, Event
 from src.domain.entities.enums import Role, ContractStatus
 from src.domain.entities.value_objects import Email, Telephone, Money
+from src.domain.policies.user_policy import UserPolicy, RequestPolicy
 from src.infrastructures.database.models import Base
 from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyClientRepository, SQLAlchemyUserRepository, \
     SQLAlchemyContratRepository, SQLAlchemyEventRepository
-from src.infrastructures.repositories.fake_client_repository import FakeClientRepository, FakeUserRepository
+from src.infrastructures.repositories.fake_client_repository import FakeClientRepository, FakeUserRepository, \
+    FakeContratRepository
 
 from dotenv import load_dotenv
 
@@ -76,6 +80,17 @@ def contrat():
     )
 
 @pytest.fixture
+def contrat2():
+    return Contrat(
+        id=None,
+        client_id= 6,
+        commercial_contact_id= 5,
+        contrat_amount=Money(100),
+        balance_due=Money(100),
+        status= ContractStatus.UNSIGNED
+    )
+
+@pytest.fixture
 def event():
     return Event(
         id=None,
@@ -105,6 +120,13 @@ def user_repository(user_commercial, user_support, user_gestion):
     repo.save(user_gestion)
     return repo
 
+@pytest.fixture
+def contrat_repository(contrat, contrat2):
+    repo = FakeContratRepository()
+    repo.save(contrat)
+    repo.save(contrat2)
+    return repo
+
 @pytest.fixture(scope="function")
 def session():
     engine = create_engine(DATABASE_URL, echo=False)
@@ -117,6 +139,10 @@ def session():
 
     session.rollback()
     session.close()
+
+@pytest.fixture
+def policy(request):
+    return UserPolicy(request)
 
 @pytest.fixture
 def client_SQLAlchemy_repository(session):
