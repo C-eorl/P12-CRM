@@ -14,6 +14,7 @@ def get_current_user() :
         return None
     if TokenStore.has_expired():
         print("token expiré")
+        TokenStore.delete_token()
         return None
 
     token = TokenStore.get_token()
