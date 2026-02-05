@@ -1,4 +1,5 @@
 from email import policy
+from typing import Optional
 
 import typer
 from rich.console import Console
@@ -11,7 +12,7 @@ from src.domain.policies.user_policy import RequestPolicy
 from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyContratRepository
 from src.use_cases.contrat_use_cases import CreateContratRequest, CreateContratUseCase, UpdateContratRequest, \
     UpdateContratUseCase, GetContratRequest, GetContratUseCase, ListContratUseCase, SignContratRequest, \
-    SignContratUseCase, RecordPaymentContratRequest, RecordPaymentContratUseCase
+    SignContratUseCase, RecordPaymentContratRequest, RecordPaymentContratUseCase, ContratFilter, ListContratRequest
 
 contrat_app = typer.Typer()
 console = Console()
@@ -133,15 +134,26 @@ def show(ctx: typer.Context, contrat_id: int):
         console.print(f"[red] {response.error} [/red]")
 
 @contrat_app.command(help="Afficher tous les contrats")
-def list(ctx: typer.Context):
+def list(
+        ctx: typer.Context,
+        list_filter: Optional[ContratFilter] = typer.Option(
+            None, "--filter", "-f",
+        help="Filter contrat",
+        )
+):
     """
     Command for list contrats
+    :param list_filter: filter contrat
     :param ctx: typer Context
     :return: None
     """
+    request = ListContratRequest(
+        commercial_contact_id = ctx.obj["current_user"]["user_current_id"],
+        list_filter = list_filter
+    )
     repo = SQLAlchemyContratRepository(ctx.obj["session"])
     use_case = ListContratUseCase(repo)
-    response = use_case.execute()
+    response = use_case.execute(request)
 
     if response.success:
         for contrat in response.contrats:

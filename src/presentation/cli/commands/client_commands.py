@@ -1,3 +1,5 @@
+from typing import Optional
+
 import typer
 from rich.console import Console
 
@@ -8,7 +10,8 @@ from src.domain.entities.enums import Role
 from src.domain.policies.user_policy import RequestPolicy
 from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyClientRepository
 from src.use_cases.client_use_cases import GetClientUseCase, GetClientRequest, CreateClientRequest, CreateClientUseCase, \
-    ListClientUseCase, UpdateClientRequest, UpdateClientUseCase, DeleteClientUseCase, DeleteClientRequest
+    ListClientUseCase, UpdateClientRequest, UpdateClientUseCase, DeleteClientUseCase, DeleteClientRequest, \
+    ListClientRequest, ClientFilter
 
 client_app = typer.Typer()
 console = Console()
@@ -146,17 +149,30 @@ def show(ctx: typer.Context, client_id: int):
         console.print(f"[red] {response.error} [/red]")
 
 @client_app.command()
-def list(ctx: typer.Context):
+def list(
+        ctx: typer.Context,
+        list_filter: Optional[ClientFilter] = typer.Option(
+            None, "--filter","-f",
+            help="Filter clients (mine)",
+        ),
+):
     """
     Command for list clients
+    :param list_filter: filter list
     :param ctx: typer Context
     :return: None
     """
+
+    request = ListClientRequest(
+        user_id=ctx.obj["current_user"]["user_current_id"],
+        list_filter=list_filter
+    )
     repo = SQLAlchemyClientRepository(ctx.obj["session"])
     use_case = ListClientUseCase(repo)
-    response = use_case.execute()
+    response = use_case.execute(request)
 
     if response.success:
+        console.print(f"Clients trouvés : {len(response.clients)}")
         for client in response.clients:
             console.print(f"\n[bold]Client #{client.id}[/bold]")
             _display_data(client)

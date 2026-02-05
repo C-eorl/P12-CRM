@@ -1,8 +1,13 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 import typer
+from rich.align import Align
 from rich.console import Console
+from rich.layout import Layout
+from rich.panel import Panel
+from rich.table import Table
+from rich.text import Text
 
 from helpers.helpers import normalize
 from src.domain.entities.entities import Event
@@ -10,7 +15,8 @@ from src.domain.entities.enums import Role
 from src.domain.policies.user_policy import RequestPolicy
 from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyEventRepository, SQLAlchemyUserRepository
 from src.use_cases.event_use_cases import ListEventUseCase, GetEventUseCase, GetEventRequest, UpdateEventUseCase, \
-    UpdateEventRequest, CreateEventUseCase, CreateEventRequest, AssignSupportEventRequest, AssignSupportEventUseCase
+    UpdateEventRequest, CreateEventUseCase, CreateEventRequest, AssignSupportEventRequest, AssignSupportEventUseCase, \
+    EventFilter, ListEventRequest
 
 event_app = typer.Typer()
 console = Console()
@@ -159,26 +165,34 @@ def show(ctx : typer.Context, event_id: int):
     response = use_case.execute(request)
 
     if response.success:
-        console.print(f"\n[bold]Evènement #{response.event.id}[/bold]")
         _display_data(response.event)
     else:
         console.print(f"[red] {response.error} [/red]")
 
 @event_app.command(help="Afficher tous les évènement")
-def list(ctx: typer.Context):
+def list(
+        ctx: typer.Context,
+        list_filter: Optional[EventFilter] = typer.Option(
+            None, "--filter", "-f",
+            help="Filter events"
+        )
+    ):
     """
     Command for list Event
+    :param list_filter: filter event
     :param ctx: typer.Context
     :return: None
     """
+    request = ListEventRequest(
+        support_contact_id= ctx.obj["current_user"]["user_current_id"],
+        list_filter=list_filter,
+    )
     repo = SQLAlchemyEventRepository(ctx.obj["session"])
     use_case = ListEventUseCase(repo)
-    response = use_case.execute()
+    response = use_case.execute(request)
 
     if response.success:
-        for event in response.events:
-            console.print(f"\n[bold]Client #{event.id}[/bold]")
-            _display_data(event)
+        _display_data_list(response.events)
     else:
         console.print(f"[red] {response.error} [/red]")
 
@@ -216,7 +230,7 @@ def assign(ctx: typer.Context, event_id: int):
     response = use_case.execute(request)
 
     if response.success:
-        console.print(f"\n[bold]Évènement #{event_id} - assigné à User #: {support_user_id}[bold]")
+        console.print(f"\n[bold]ÉvèneKment #{event_id} - assigné à User #: {support_user_id}[bold]")
     else:
         console.print(f"[red] {response.error} [/red]")
     console.print(f"\n[bold]Évènement #{event_id} - assigné à User #: {support_user_id}[bold]")
@@ -224,14 +238,75 @@ def assign(ctx: typer.Context, event_id: int):
 
 def _display_data(data: Event):
     """ Display data of Event"""
-    console.print(f"  Nom: ID {data.name}")
-    console.print(f"  Contrat: ID {data.contrat_id}")
-    console.print(f"  Client: ID {data.client_id}")
-    console.print(f"  Contact support: ID {data.support_contact_id}")
-    console.print(f"  Date de début: {data.start_date.strftime('%d/%m/%Y %H:%M')}")
-    console.print(f"  Date de fin: {data.end_date.strftime('%d/%m/%Y %H:%M')}")
-    console.print(f"  Emplacement: {data.location}")
-    console.print(f"  Participants: {data.attendees}")
-    console.print(f"  Notes: {data.notes}")
-    console.print(f"  Créé le: {data.created_at.strftime('%d/%m/%Y %H:%M')}")
-    console.print(f"  Mis à jour: {data.updated_at.strftime('%d/%m/%Y %H:%M')}\n")
+    header_text = Text()
+    header_text.append(f"{data.name}\n", style="bold white")
+    header_text.append(f"{data.location} — {data.attendees} participants\n", style="cyan")
+    header_text.append(f"{data.start_date:%d/%m/%Y %H:%M} → {data.end_date:%d/%m/%Y %H:%M}", style="green")
+
+    header_panel = Panel(
+        Align.center(header_text),
+        title=f"Evènement #{data.id}",
+        border_style="cyan",
+        padding=(1, 2)
+    )
+
+    # Info table
+    info = Table.grid(padding=1)
+    info.add_column(style="bold", no_wrap=True)
+    info.add_column()
+    info.add_column(style="bold", no_wrap=True)
+    info.add_column()
+
+    info.add_row(
+        "Contrat", f"#{data.contrat_id}",
+        "Client", f"#{data.client_id}",
+    )
+    support_display = f"[yellow]{data.support_contact_id}[/yellow]" if data.support_contact_id else "[dim]—[/dim]"
+    info.add_row(
+        "Support", support_display,
+        "", "",
+    )
+    info_panel = Panel(info, border_style="cyan", padding=(1, 2))
+
+    # Notes panel
+    notes_panel = Panel(
+        data.notes or "—",
+        title="[bold]Notes[/bold]",
+        border_style="dim",
+        padding=(1, 2)
+    )
+
+    # Print panels one after another
+    console.print(header_panel)
+    console.print(info_panel)
+    console.print(notes_panel)
+
+def _display_data_list(events: List[Event]):
+    """
+    Affiche une liste d'évènements sous forme de cards, 4 par ligne
+    """
+    table = Table.grid(expand=True, padding=(1, 2))
+    # On met 4 colonnes pour 4 cards par ligne
+    for _ in range(4):
+        table.add_column(ratio=1)
+
+    row_panels = []
+    for i, event in enumerate(events, 1):
+        # Contenu de la card
+        card = Panel(
+            f"[bold]{event.name}[/bold]\n"
+            f"[cyan]{event.location}[/cyan]\n"
+            f"[magenta]{event.attendees} participants[/magenta]\n"
+            f"[green]{event.start_date:%d/%m/%Y %H:%M}[/green] → [red]{event.end_date:%d/%m/%Y %H:%M}[/red]",
+            title=f"Evènement # {event.id}",
+            border_style="cyan",
+            padding=(1,4)
+        )
+        row_panels.append(card)
+
+        # Dès que la ligne est complète ou fin de liste, on l'ajoute au tableau
+        if i % 4 == 0 or i == len(events):
+            table.add_row(*row_panels)
+            row_panels = []
+
+    console.print(table)

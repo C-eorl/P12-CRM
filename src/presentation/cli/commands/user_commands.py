@@ -10,7 +10,7 @@ from src.domain.policies.user_policy import RequestPolicy
 from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyUserRepository
 from src.infrastructures.security.security import BcryptPasswordHasher
 from src.use_cases.user_use_cases import CreateUserRequest, CreateUserUseCase, UpdateUserRequest, UpdateUserUseCase, \
-    GetUserRequest, GetUserUseCase, ListUserUseCase, DeleteUserUseCase, DeleteUserRequest
+    GetUserRequest, GetUserUseCase, ListUserUseCase, DeleteUserUseCase, DeleteUserRequest, ListUserRequest, UserFilter
 
 user_app = typer.Typer()
 console = Console()
@@ -127,15 +127,29 @@ def show(ctx: typer.Context, user_id: int):
         console.print(f"[red] {response.error} [/red]")
 
 @user_app.command()
-def list(ctx: typer.Context):
+def list(
+        ctx: typer.Context,
+        list_filter: Optional[UserFilter] = typer.Option(
+            None, "--filter", "-f",
+            help="Filter user (commercial, gestion, support)",
+        ),
+):
     """
     Command to list all users
+    :param list_filter: list filters
     :param ctx: typer context
     :return: None
     """
+
+    request = ListUserRequest(
+        role= ctx.obj["current_user"]["user_current_role"],
+        list_filter=list_filter,
+    )
+
+
     repo = SQLAlchemyUserRepository(ctx.obj["session"])
     use_case = ListUserUseCase(repo)
-    response = use_case.execute()
+    response = use_case.execute(request)
 
     if response.success:
         for user in response.users:
