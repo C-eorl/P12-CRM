@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 from typing import Optional, List
 
 from src.domain.entities.entities import User
@@ -126,6 +127,16 @@ class UpdateUserUseCase:
         return UpdateUserResponse(success=True, user=updated_user)
 
 ################################################################################################
+class UserFilter(Enum):
+    ROLE_COMMERCIAL = "role:commercial"
+    ROLE_SUPPORT = "role:support"
+    ROLE_GESTION = "role:gestion"
+    ROLE_ADMIN = "role:admin"
+
+@dataclass
+class ListUserRequest:
+    role: Role
+    list_filter: UserFilter
 
 @dataclass
 class ListUserResponse:
@@ -139,8 +150,15 @@ class ListUserUseCase:
     def __init__(self, user_repository: UserRepository):
         self.repository = user_repository
 
-    def execute(self) -> ListUserResponse:
-        all_user = self.repository.find_all()
+    def execute(self, request: ListUserRequest) -> ListUserResponse:
+        criteres = {"role" : None}
+        match request.list_filter:
+            case UserFilter.ROLE_COMMERCIAL : criteres["role"] = Role.COMMERCIAL
+            case UserFilter.ROLE_GESTION : criteres["role"] = Role.GESTION
+            case UserFilter.ROLE_SUPPORT : criteres["role"] = Role.SUPPORT
+            case UserFilter.ROLE_ADMIN : criteres["role"] = Role.ADMIN
+
+        all_user = self.repository.find_all(criteres)
         return ListUserResponse(success=True, users=all_user)
 
 

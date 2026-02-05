@@ -1,6 +1,7 @@
 ##############################################################################
 from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
 from typing import Optional, List
 
 from src.domain.entities.entities import User, Event
@@ -44,6 +45,24 @@ class CreateEventUseCase:
             return CreateEventResponse(
                 success=False,
                 error="Seuls les membres support peuvent créer des évènements"
+            )
+
+        #Validation
+        if request.start_date < datetime.now():
+            return CreateEventResponse(
+                success=False,
+                error="La date de début est déjà passé"
+            )
+        if request.end_date <= request.start_date:
+            return CreateEventResponse(
+                success=False,
+                error="La date de fin doit être après la date de début"
+            )
+
+        if request.attendees <= 0:
+            return CreateEventResponse(
+                success=False,
+                error="Le nombre de participants doit être positif"
             )
 
         event = Event(
@@ -121,6 +140,15 @@ class UpdateEventUseCase:
         return UpdateEventResponse(success=True, event=updated_event)
 
 ##############################################################################
+class EventFilter(Enum):
+    WITHOUT_SUPPORT = "no-support"
+    MINE = "mine"
+
+@dataclass
+class ListEventRequest:
+    support_contact_id: int
+    list_filter: EventFilter
+
 @dataclass
 class ListEventResponse:
     success: bool
@@ -134,8 +162,15 @@ class ListEventUseCase:
     def __init__(self, event_repository: EventRepository):
         self.repository = event_repository
 
-    def execute(self) -> ListEventResponse:
-        events = self.repository.find_all()
+    def execute(self, request: ListEventRequest) -> ListEventResponse:
+        criteres = dict()
+        match request.list_filter:
+            case EventFilter.MINE:
+                criteres["support_contact_id"] = request.support_contact_id
+            case EventFilter.WITHOUT_SUPPORT:
+                criteres["support_contact"] = False
+
+        events = self.repository.find_all(criteres)
         return ListEventResponse(success=True, events=events)
 
 ##############################################################################

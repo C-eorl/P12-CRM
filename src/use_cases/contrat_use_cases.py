@@ -1,5 +1,6 @@
 ##############################################################################
 from dataclasses import dataclass
+from enum import Enum
 from typing import Optional, List
 
 from src.domain.entities.entities import User, Contrat
@@ -104,6 +105,18 @@ class UpdateContratUseCase:
         return UpdateContratResponse(success=True, contrat=updated_contrat)
 
 ##############################################################################
+class ContratFilter(Enum):
+    MINE = "mine"
+    NO_SIGN = "no-sign"
+    SIGNED = "signed"
+    NOT_FULLY_PAID = "not-fully-paid"
+    FULLY_PAID = "fully-paid"
+
+@dataclass
+class ListContratRequest:
+    commercial_contact_id: int
+    list_filter: ContratFilter
+
 @dataclass
 class ListContratResponse:
     success: bool
@@ -117,8 +130,21 @@ class ListContratUseCase:
     def __init__(self, contrat_repository: ContratRepository):
         self.repository = contrat_repository
 
-    def execute(self) -> ListContratResponse:
-        contrats = self.repository.find_all()
+    def execute(self, request: ListContratRequest) -> ListContratResponse:
+        criteres = dict()
+        match request.list_filter:
+            case ContratFilter.MINE:
+                criteres["commercial_contact_id"] = request.commercial_contact_id
+            case ContratFilter.NO_SIGN:
+                criteres["signed"] = False
+            case ContratFilter.SIGNED:
+                criteres["signed"] = True
+            case ContratFilter.FULLY_PAID:
+                criteres["fully_paid"] = True
+            case ContratFilter.NOT_FULLY_PAID:
+                criteres["fully_paid"] = False
+
+        contrats = self.repository.find_all(criteres)
         return ListContratResponse(success=True, contrats=contrats)
 
 ##############################################################################
@@ -265,6 +291,7 @@ class RecordPaymentContratUseCase:
                 error="Contrat non trouvé"
             )
 
+        request.authorization.context = contrat
         policy = UserPolicy(request.authorization)
         request.authorization.context = contrat
         if not policy.is_allowed():

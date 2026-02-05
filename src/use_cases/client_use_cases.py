@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 from typing import Optional, List
 
 
@@ -139,6 +140,13 @@ class UpdateClientUseCase:
 
 
 #############################################################################
+class ClientFilter(Enum):
+    MINE = "mine"
+
+@dataclass
+class ListClientRequest:
+    user_id: int
+    list_filter: Optional[ClientFilter]
 
 @dataclass
 class ListClientResponse:
@@ -152,9 +160,14 @@ class ListClientUseCase:
     def __init__(self, client_repository: ClientRepository):
         self.repository = client_repository
 
-    def execute(self) -> ListClientResponse:
-        all_client = self.repository.find_all()
-        return ListClientResponse(success=True, clients=all_client)
+    def execute(self, request: ListClientRequest) -> ListClientResponse:
+        criteres = dict()
+        match request.list_filter:
+            case ClientFilter.MINE:
+                criteres["commercial_contact_id"] = request.user_id
+
+        all_clients = self.repository.find_all(criteres)
+        return ListClientResponse(success=True, clients=all_clients)
 
 #############################################################################
 @dataclass
