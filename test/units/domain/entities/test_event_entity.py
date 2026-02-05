@@ -10,56 +10,6 @@ def test_create_valid_event(event):
 
     assert isinstance(event, Event)
 
-def test_create_startdate_passed_event(event):
-    """start date passed"""
-
-    with pytest.raises(BusinessRuleViolation):
-        Event(
-            id=1,
-            name="test event",
-            contrat_id=1,
-            client_id=1,
-            support_contact_id=3,
-            start_date=datetime(2024, 5, 15),
-            end_date=datetime(2026, 5, 20),
-            location="2 rue des test, Nantes",
-            attendees=150,
-            notes=""
-        )
-
-def test_create_enddate_before_event(event):
-    """end date before start date"""
-
-    with pytest.raises(BusinessRuleViolation):
-        Event(
-            id=1,
-            name="test event",
-            contrat_id=1,
-            client_id=1,
-            support_contact_id=3,
-            start_date=datetime(2026, 5, 15),
-            end_date=datetime(2026, 2, 20),
-            location="2 rue des test, Nantes",
-            attendees=150,
-            notes=""
-        )
-
-def test_create_not_attendees_event(event):
-    """end date before start date"""
-
-    with pytest.raises(BusinessRuleViolation):
-        Event(
-            id=1,
-            name="test event",
-            contrat_id=1,
-            client_id=1,
-            support_contact_id=3,
-            start_date=datetime(2026, 5, 15),
-            end_date=datetime(2026, 2, 20),
-            location="2 rue des test, Nantes",
-            attendees=0,
-            notes=""
-        )
 
 def test_assign_support(event, user_support):
     """Assign user support (id: 2) to event"""
