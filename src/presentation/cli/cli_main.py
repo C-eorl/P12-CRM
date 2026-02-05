@@ -29,9 +29,7 @@ def main(ctx: typer.Context):
     Initialisation Context and add session(DB), current_user(dict)
     """
 
-
     ctx.ensure_object(dict)
-
     ctx.obj["session"] = get_session()
     ctx.obj["current_user"] = get_current_user()
 
