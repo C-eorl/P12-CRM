@@ -15,21 +15,21 @@ def test_save_user_create(user_SQLAlchemy_repository, user_support, session):
 
 def test_save_user_update(user_SQLAlchemy_repository):
     """test save method for update client"""
-    saved_user = user_SQLAlchemy_repository.find_by_id(7)
+    saved_user = user_SQLAlchemy_repository.find_by_id(5)
 
     saved_user.fullname = "modify test"
     user_SQLAlchemy_repository.save(saved_user)
 
-    updated_user = user_SQLAlchemy_repository.find_by_id(7)
+    updated_user = user_SQLAlchemy_repository.find_by_id(5)
     assert updated_user.fullname == "modify test"
     assert saved_user.email == updated_user.email
 
 def test_find_by_id(user_SQLAlchemy_repository):
     """test find by id method """
-    user_find = user_SQLAlchemy_repository.find_by_id(6)
+    user_find = user_SQLAlchemy_repository.find_by_id(5)
 
     assert isinstance(user_find, User)
-    assert user_find.email.address == "francois.petit@example.com"
+    assert user_find.email.address == "emma.bernard@example.com"
 
 def test_find_by_invalid_id(user_SQLAlchemy_repository):
     """test find all method """
@@ -47,10 +47,10 @@ def test_find_all(user_SQLAlchemy_repository, session):
 
 def test_find_by_email(user_SQLAlchemy_repository):
     """test find by email method """
-    user_find = user_SQLAlchemy_repository.find_by_email("francois.petit@example.com")
+    user_find = user_SQLAlchemy_repository.find_by_email("emma.bernard@example.com")
 
     assert isinstance(user_find, User)
-    assert user_find.id == 6
+    assert user_find.id == 5
 
 def test_find_by_invalid_email(user_SQLAlchemy_repository):
     """test find by invalid email method """

@@ -35,7 +35,7 @@ def test_find_by_id(contrat_SQLAlchemy_repository):
 
 def test_find_by_invalid_id(contrat_SQLAlchemy_repository):
     """test find all method """
-    find_contrat = contrat_SQLAlchemy_repository.find_by_id(45)
+    find_contrat = contrat_SQLAlchemy_repository.find_by_id(454)
 
     assert find_contrat is None
 
@@ -49,7 +49,7 @@ def test_find_all(contrat_SQLAlchemy_repository, session):
 
 def test_find_by_commercial_contact(contrat_SQLAlchemy_repository, session):
     """test find all method """
-    all_contrats = contrat_SQLAlchemy_repository.find_by_commercial_contact(3)
+    all_contrats = contrat_SQLAlchemy_repository.find_all_assign(3)
 
     assert isinstance(all_contrats, List)
     actual_count_contrat = session.query(ContratModel).where(ContratModel.commercial_contact_id == 3).count()

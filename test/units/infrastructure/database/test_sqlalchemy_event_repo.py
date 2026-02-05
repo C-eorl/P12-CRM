@@ -26,17 +26,17 @@ def test_save_event_update(event_SQLAlchemy_repository):
 
 def test_find_by_id(event_SQLAlchemy_repository):
     """test find by id method """
-    event_find = event_SQLAlchemy_repository.find_by_id(3)
+    event_find = event_SQLAlchemy_repository.find_by_id(5)
 
     assert isinstance(event_find, Event)
-    assert event_find.client_id == 3
-    assert event_find.support_contact_id == 6
-    assert event_find.location == "Marseille"
+    assert event_find.client_id == 1
+    assert event_find.support_contact_id == 5
+    assert event_find.location == "2 rue des test, Nantes"
 
 
 def test_find_by_invalid_id(event_SQLAlchemy_repository):
     """test find all method """
-    find_event = event_SQLAlchemy_repository.find_by_id(45)
+    find_event = event_SQLAlchemy_repository.find_by_id(455)
 
     assert find_event is None
 
