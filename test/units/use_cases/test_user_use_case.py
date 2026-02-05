@@ -1,5 +1,7 @@
 from src.domain.entities.entities import User
+from src.domain.entities.enums import Role
 from src.domain.entities.value_objects import Email
+from src.domain.policies.user_policy import RequestPolicy
 from src.infrastructures.security.security import BcryptPasswordHasher
 from src.use_cases.user_use_cases import CreateUserUseCase, CreateUserRequest, CreateUserResponse, UpdateUserUseCase, \
     UpdateUserRequest, UpdateUserResponse, ListUserUseCase, ListUserResponse, GetUserRequest, GetUserUseCase, \
@@ -17,8 +19,12 @@ def test_create_user(user_repository, user_gestion):
         fullname='test',
         email='test@test.fr',
         password='testtest',
-        role='COMMERCIAL',
-        current_user= user_gestion
+        role=Role.COMMERCIAL,
+        authorization=RequestPolicy(
+            user={"user_current_id": 1, "user_current_role": Role.GESTION},
+            ressource="USER",
+            action="create",
+        )
     )
 
     response = user_create_UC.execute(request)
@@ -39,7 +45,11 @@ def test_update_user(user_repository, user_gestion):
         user_id = 1,
         fullname='test_modify henri',
         email="modify.email@mail.fr",
-        current_user=user_gestion
+        authorization=RequestPolicy(
+            user={"user_current_id": 1, "user_current_role": Role.GESTION},
+            ressource="USER",
+            action="create",
+        )
     )
     response = user_update_UC.execute(request)
 
@@ -94,7 +104,11 @@ def test_delete_user(user_repository,user_gestion):
 
     request = DeleteUserRequest(
         user_id=2,
-        current_user=user_gestion
+        authorization=RequestPolicy(
+            user={"user_current_id": 1, "user_current_role": Role.GESTION},
+            ressource="USER",
+            action="create",
+        )
     )
     response = user_delete_UC.execute(request)
 
