@@ -4,7 +4,7 @@ from sqlalchemy import select, exists
 from sqlalchemy.orm import Session
 
 from src.domain.entities.entities import Client, User, Contrat, Event
-from src.domain.entities.enums import Role
+from src.domain.entities.enums import Role, ContractStatus
 from src.domain.entities.value_objects import Email, Telephone, Money
 from src.infrastructures.database.models import ClientModel, UserModel, ContratModel, EventModel
 
@@ -58,9 +58,17 @@ class SQLAlchemyClientRepository:
             return None
         return self._to_entity(db_client)
 
-    def find_all(self) -> List[Client]:
+    def find_all(self, criteres: dict) -> List[Client]:
         """Finds all clients in the database"""
-        result = self.session.execute(select(ClientModel))
+        stmt = select(ClientModel)
+
+        commercial_contact_id = criteres.get("commercial_contact_id")
+        if commercial_contact_id is not None:
+            stmt = stmt.where(
+                ClientModel.commercial_contact_id == commercial_contact_id
+            )
+
+        result = self.session.execute(stmt)
         db_clients = result.scalars().all()
 
         return [self._to_entity(db_client) for db_client in db_clients]
@@ -133,9 +141,14 @@ class SQLAlchemyUserRepository:
             return None
         return self._to_entity(db_user)
 
-    def find_all(self) -> List[User]:
+    def find_all(self, criteres: dict) -> List[User]:
         """Finds all users in the database"""
-        result = self.session.execute(select(UserModel))
+        stmt = select(UserModel)
+
+        if criteres["role"] is not None:
+            stmt = stmt.where(UserModel.role == criteres["role"])
+
+        result = self.session.execute(stmt)
         db_users = result.scalars().all()
 
         return [self._to_entity(db_user) for db_user in db_users]
@@ -148,15 +161,6 @@ class SQLAlchemyUserRepository:
         if db_user is None:
             return None
         return self._to_entity(db_user)
-
-    def find_by_role(self, role: Role) -> List[User]:
-        """Finds all user by role"""
-        result = self.session.execute(
-            select(UserModel).where(UserModel.role == role)
-        )
-        db_users = result.scalars().all()
-
-        return [self._to_entity(db_user) for db_user in db_users]
 
     def delete(self, user_id: int) -> None:
         """Deletes a user from the database"""
@@ -228,30 +232,29 @@ class SQLAlchemyContratRepository:
             return None
         return self._to_entity(db_contrat)
 
-    def find_all(self) -> List[Contrat]:
+    def find_all(self, criteres) -> List[Contrat]:
         """Finds all contrats in the database"""
-        result = self.session.execute(select(ContratModel))
+        stmt = select(ContratModel)
+        if criteres.get("commercial_contact_id"):
+            stmt = stmt.where(ContratModel.commercial_contact_id == criteres["commercial_contact_id"])
+
+        if criteres.get("signed") is True:
+            stmt = stmt.where(ContratModel.status == ContractStatus.SIGNED)
+
+        if criteres.get("signed") is False:
+            stmt = stmt.where(ContratModel.status == ContractStatus.UNSIGNED)
+
+        if criteres.get("fully_paid") is True:
+            stmt = stmt.where(ContratModel.balance_due == 0)
+
+        if criteres.get("fully_paid") is False:
+            stmt = stmt.where(ContratModel.balance_due != 0)
+
+        result = self.session.execute(stmt)
         db_contrats = result.scalars().all()
 
         return [self._to_entity(db_contrat) for db_contrat in db_contrats]
 
-    def find_by_commercial_contact(self, commercial_contact_id: int) -> List[Contrat]:
-        """Finds all contrats by commercial contact"""
-        result = self.session.execute(
-            select(ContratModel).where(ContratModel.commercial_contact_id == commercial_contact_id)
-        )
-        db_contrats = result.scalars().all()
-
-        return [self._to_entity(db_contrat) for db_contrat in db_contrats]
-
-    def find_by_client_id(self, client_id: int) -> List[Contrat]:
-        """Finds all contrats by client id"""
-        result = self.session.execute(
-            select(ContratModel).where(ContratModel.client_id == client_id)
-        )
-        db_contrats = result.scalars().all()
-
-        return [self._to_entity(db_contrat) for db_contrat in db_contrats]
 
     def delete(self, contrat_id: int) -> None:
         """Deletes a contrat"""
@@ -333,35 +336,16 @@ class SQLAlchemyEventRepository:
             return None
         return self._to_entity(db_event)
 
-    def find_all(self) -> List[Event]:
+    def find_all(self, criteres) -> List[Event]:
         """Finds all events in the database"""
-        result = self.session.execute(select(EventModel))
-        db_events = result.scalars().all()
+        stmt = select(EventModel)
+        if criteres.get("support_contact_id"):
+            stmt = stmt.where(EventModel.support_contact_id == criteres["support_contact_id"])
 
-        return [self._to_entity(db_event) for db_event in db_events]
+        if criteres.get("support_contact") is False:
+            stmt = stmt.where(EventModel.support_contact_id == None)
 
-    def find_by_contrat_id(self, contrat_id: int) -> List[Event]:
-        """Finds all events by contrat_id"""
-        result = self.session.execute(
-            select(EventModel).where(EventModel.contrat_id == contrat_id)
-        )
-        db_events = result.scalars().all()
-        return [self._to_entity(db_event) for db_event in db_events]
-
-    def find_by_support_contact_id(self, support_contact_id: int) -> List[Event]:
-        """Finds all events by support contact"""
-        result = self.session.execute(
-            select(EventModel).where(EventModel.support_contact_id == support_contact_id)
-        )
-        db_events = result.scalars().all()
-
-        return [self._to_entity(db_event) for db_event in db_events]
-
-    def find_by_client_id(self, client_id: int) -> List[Event]:
-        """Finds all events by client"""
-        result = self.session.execute(
-            select(EventModel).where(EventModel.client_id == client_id)
-        )
+        result = self.session.execute(stmt)
         db_events = result.scalars().all()
 
         return [self._to_entity(db_event) for db_event in db_events]
