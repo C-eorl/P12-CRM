@@ -31,10 +31,13 @@
               }
         },
         "CONTRAT": {
-              "modify": {
+              "update": {
                   "commercial_contact_id": "user_current_id"
               },
               "sign": {
+                  "commercial_contact_id": "user_current_id"
+              },
+              "pay": {
                   "commercial_contact_id": "user_current_id"
               }
         },
