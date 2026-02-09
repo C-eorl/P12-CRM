@@ -1,7 +1,11 @@
-from typing import Optional
+from typing import Optional, List
 
 import typer
+from rich import box
 from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+from rich.text import Text
 
 from helpers.helpers import normalize
 from src.domain.entities.entities import User
@@ -23,7 +27,7 @@ def permission(ctx:typer.Context):
             raise typer.Exit()
     ctx.obj["ressource"] = "USER"
 
-@user_app.command()
+@user_app.command(help="Créer un utilisateur")
 def create(
         ctx: typer.Context,
         fullname: str = typer.Option(..., prompt=True),
@@ -63,7 +67,7 @@ def create(
     else:
         console.print(f"[red] {response.error} [/red]")
 
-@user_app.command()
+@user_app.command("Modifier un utilisateur")
 def update(ctx: typer.Context, user_id: int):
     """
     Command to update existing user
@@ -104,7 +108,7 @@ def update(ctx: typer.Context, user_id: int):
     else:
         console.print(f"[red] {response.error} [/red]")
 
-@user_app.command()
+@user_app.command(help="Afficher un utilisateur")
 def show(ctx: typer.Context, user_id: int):
     """
     Command to show a user
@@ -121,12 +125,12 @@ def show(ctx: typer.Context, user_id: int):
     response = use_case.execute(request)
 
     if response.success:
-        console.print(f"\n[bold]Utilisateur #{response.user.id}[/bold]")
+        console.print(f"\n[bold]Utilisateur #{response.user.id}[/bold]\n")
         _display_data(response.user)
     else:
         console.print(f"[red] {response.error} [/red]")
 
-@user_app.command()
+@user_app.command(help="Afficher une liste d'utilisateur")
 def list(
         ctx: typer.Context,
         list_filter: Optional[UserFilter] = typer.Option(
@@ -152,13 +156,11 @@ def list(
     response = use_case.execute(request)
 
     if response.success:
-        for user in response.users:
-            console.print(f"\n[bold]Utilisateur #{user.id}[/bold]")
-            _display_data(user)
+        _display_data_list(response.users)
     else:
         console.print(f"[red] {response.error} [/red]")
 
-@user_app.command()
+@user_app.command(help="Supprimer un utilisateur")
 def delete(ctx: typer.Context, user_id: int):
     """
     Command for delete client
@@ -191,10 +193,57 @@ def delete(ctx: typer.Context, user_id: int):
     else:
         console.print(f"[red] {response.error} [/red]")
 
-def _display_data(data: User):
+def _display_data(user: User):
     """ Display data of User """
-    console.print(f"  Nom: {data.fullname}")
-    console.print(f"  Email: {data.email}")
-    console.print(f"  Role: {data.role}")
-    console.print(f"  Créé le: {data.created_at.strftime('%d/%m/%Y %H:%M')}")
-    console.print(f"  Mis à jour: {data.updated_at.strftime('%d/%m/%Y %H:%M')}\n")
+    content = Text()
+
+    content.append(f"\nID: ", style="bold cyan")
+    content.append(f"{user.id or 'N/A'}\n")
+
+    content.append(f"Nom complet: ", style="bold cyan")
+    content.append(f"{user.fullname}\n")
+
+    content.append(f"Adresse Email: ", style="bold cyan")
+    content.append(f"{user.email}\n")
+
+    content.append(f"Role: ", style="bold cyan")
+    content.append(f"{user.role.name}\n")
+
+    panel = Panel(
+        content,
+        title=f"[bold magenta] {user.fullname}[/bold magenta]",
+        border_style="white",
+        box=box.ROUNDED,
+        expand=False
+    )
+
+    console.print(panel)
+
+def _display_data_list(users: List[User]):
+    """
+    Display users table
+    """
+
+    table = Table(
+        title="[bold magenta] Liste des Utilisateurs[/bold magenta]",
+        box=box.ROUNDED,
+        show_header=True,
+        header_style="bold cyan",
+        border_style="white"
+    )
+
+    table.add_column("ID", style="dim", width=6, justify="right")
+    table.add_column("Nom complet", style="bold", min_width=20)
+    table.add_column("Email", width=16)
+    table.add_column("Role", width=16)
+
+    for user in users:
+
+        table.add_row(
+            str(user.id or "-"),
+            user.fullname,
+            str(user.email),
+            user.role.name,
+        )
+    console.print(f"\nTotal: [dim]{len(users)} utilisateur(s)[/dim]")
+    console.print(table)

@@ -1,8 +1,11 @@
-from email import policy
-from typing import Optional
+from typing import Optional, List
 
 import typer
+from rich import box
 from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+from rich.text import Text
 
 from helpers.helpers import normalize
 from src.domain.entities.entities import Contrat
@@ -58,7 +61,7 @@ def create(
     response = use_case.execute(request)
 
     if response.success:
-        console.print(f"\n[bold]Contrat #{response.contrat.id} créé[/bold]")
+        console.print(f"\n[bold]Contrat #{response.contrat.id} créé[/bold]\n")
         _display_data(response.contrat)
     else:
         console.print(f"[red] {response.error} [/red]")
@@ -101,7 +104,7 @@ def update(ctx: typer.Context,contrat_id: int):
     response = use_case.execute(request)
 
     if response.success:
-        console.print(f"\n[bold]Contrat #{response.contrat.id} modifié[/bold]")
+        console.print(f"\n[bold]Contrat #{response.contrat.id} modifié[/bold]\n")
         _display_data(response.contrat)
     else:
         console.print(f"[red] {response.error} [/red]")
@@ -110,7 +113,7 @@ def update(ctx: typer.Context,contrat_id: int):
 @contrat_app.command(help="Afficher un contrat")
 def show(ctx: typer.Context, contrat_id: int):
     """
-    Command for show one contrat
+    Command for show contrat
     :param ctx: typer Context
     :param contrat_id: ID contrat
     :return: None
@@ -128,7 +131,6 @@ def show(ctx: typer.Context, contrat_id: int):
     response = use_case.execute(request)
 
     if response.success:
-        console.print(f"\n[bold]Contrat #{response.contrat.id} [/bold]")
         _display_data(response.contrat)
     else:
         console.print(f"[red] {response.error} [/red]")
@@ -156,9 +158,7 @@ def list(
     response = use_case.execute(request)
 
     if response.success:
-        for contrat in response.contrats:
-            console.print(f"\n[bold]Contrat #{contrat.id}[/bold]")
-            _display_data(contrat)
+            _display_data_list(response.contrats)
     else:
         console.print(f"[red] {response.error} [/red]")
 
@@ -232,13 +232,68 @@ def pay(ctx : typer.Context, contrat_id: int):
     else:
         console.print(f"[red] {response.error} [/red]")
 
-def _display_data(data: Contrat):
-    """ Display data of Client """
+def _display_data(contrat: Contrat):
+    """ Display data of Contrat """
 
-    console.print(f"  Client: ID {data.client_id}")
-    console.print(f"  Commercial: ID {data.commercial_contact_id}")
-    console.print(f"  Montant: {data.contrat_amount}")
-    console.print(f"  Solde: {data.balance_due}")
-    console.print(f"  Statut: {data.status.name}")
-    console.print(f"  Créé le: {data.created_at.strftime('%d/%m/%Y %H:%M')}")
-    console.print(f"  Mis à jour: {data.updated_at.strftime('%d/%m/%Y %H:%M')}\n")
+    content = Text()
+
+    content.append(f"\nID: ", style="bold cyan")
+    content.append(f"{contrat.id or 'N/A'}\n")
+
+    content.append(f"Client: ", style="bold cyan")
+    content.append(f"{contrat.client_id}\n")
+
+    content.append(f"Contact commercial: ", style="bold cyan")
+    content.append(f"{contrat.commercial_contact_id}\n")
+
+    content.append(f"Montant du contrat: ", style="bold cyan")
+    content.append(f"{contrat.contrat_amount}\n")
+
+    content.append(f"Somme restante: ", style="bold cyan")
+    content.append(f"{contrat.balance_due}\n")
+
+    content.append(f"Status: ", style="bold cyan")
+    content.append(f"{contrat.status.name}\n")
+
+    panel = Panel(
+        content,
+        title=f"[bold magenta] Contrat #{contrat.id}[/bold magenta]",
+        border_style="white",
+        box=box.ROUNDED,
+        expand=False
+    )
+
+    console.print(panel)
+
+def _display_data_list(contrats: List[Contrat]):
+    """
+    Display contrats table
+    """
+
+    table = Table(
+        title="[bold magenta] Liste des Contrats[/bold magenta]",
+        box=box.ROUNDED,
+        show_header=True,
+        header_style="bold cyan",
+        border_style="white"
+    )
+
+    table.add_column("ID", style="dim", width=6, justify="right")
+    table.add_column("Client", style="bold", min_width=20)
+    table.add_column("Contact commercial", width=16)
+    table.add_column("Montant du contrat", width=16)
+    table.add_column("Somme restante", min_width=15)
+    table.add_column("Status", width=12, justify="right")
+
+    for contrat in contrats:
+
+        table.add_row(
+            str(contrat.id or "-"),
+            str(contrat.client_id),
+            str(contrat.commercial_contact_id),
+            str(contrat.contrat_amount),
+            str(contrat.balance_due),
+            contrat.status.name
+        )
+    console.print(f"\nTotal: [dim]{len(contrats)} contrat(s)[/dim]")
+    console.print(table)

@@ -2,9 +2,8 @@ from datetime import datetime
 from typing import Optional, List
 
 import typer
-from rich.align import Align
+from rich import box
 from rich.console import Console
-from rich.layout import Layout
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
@@ -90,7 +89,7 @@ def create(
     response = use_case.execute(request)
 
     if response.success:
-        console.print(f"\n[bold]Evènement #{response.event.id} créé[/bold]")
+        console.print(f"\n[bold]Evènement #{response.event.id} créé[/bold]\n")
         _display_data(response.event)
     else:
         console.print(f"[red] {response.error} [/red]")
@@ -142,7 +141,7 @@ def update(ctx: typer.Context, event_id: int):
     response = use_case.execute(request)
 
     if response.success:
-        console.print(f"\n[bold]Evènement #{response.event.id} modifié[/bold]")
+        console.print(f"\n[bold]Evènement #{response.event.id} modifié[/bold]\n")
         _display_data(response.event)
     else:
         console.print(f"[red] {response.error} [/red]")
@@ -151,7 +150,7 @@ def update(ctx: typer.Context, event_id: int):
 @event_app.command(help="Afficher un évènement")
 def show(ctx : typer.Context, event_id: int):
     """
-    Command for show one Event
+    Command for show Event
     :param ctx:  typer.Context
     :param event_id: ID of the event
     :return: None
@@ -230,83 +229,92 @@ def assign(ctx: typer.Context, event_id: int):
     response = use_case.execute(request)
 
     if response.success:
-        console.print(f"\n[bold]ÉvèneKment #{event_id} - assigné à User #: {support_user_id}[bold]")
+        console.print(f"\n[bold]Évènement #{event_id} - assigné à User #: {support_user_id}[bold]")
     else:
         console.print(f"[red] {response.error} [/red]")
-    console.print(f"\n[bold]Évènement #{event_id} - assigné à User #: {support_user_id}[bold]")
 
 
-def _display_data(data: Event):
+def _display_data(event: Event):
     """ Display data of Event"""
-    header_text = Text()
-    header_text.append(f"{data.name}\n", style="bold white")
-    header_text.append(f"{data.location} — {data.attendees} participants\n", style="cyan")
-    header_text.append(f"{data.start_date:%d/%m/%Y %H:%M} → {data.end_date:%d/%m/%Y %H:%M}", style="green")
 
-    header_panel = Panel(
-        Align.center(header_text),
-        title=f"Evènement #{data.id}",
-        border_style="cyan",
-        padding=(1, 2)
+    content = Text()
+
+    content.append(f"ID: ", style="bold cyan")
+    content.append(f"{event.id or 'N/A'}\n")
+
+    content.append(f"\nContrat: ", style="bold cyan")
+    content.append(f"#{event.contrat_id}\n")
+
+    content.append(f"Client: ", style="bold cyan")
+    content.append(f"#{event.client_id}\n")
+
+    content.append(f"Contact Support: ", style="bold cyan")
+    support_text = f"#{event.support_contact_id}" if event.support_contact_id else "[dim]Non assigné[/dim]"
+    content.append(support_text + "\n")
+
+    content.append(f"\nDébut: ", style="bold cyan")
+    content.append(f"{event.start_date.strftime('%d/%m/%Y %H:%M')}\n")
+
+    content.append(f"Fin: ", style="bold cyan")
+    content.append(f"{event.end_date.strftime('%d/%m/%Y %H:%M')}\n")
+
+
+    content.append(f"\nLieu: ", style="bold cyan")
+    content.append(f"{event.location}\n")
+
+    content.append(f"Participants: ", style="bold cyan")
+    content.append(f"{event.attendees} personne(s)\n")
+
+    if event.notes:
+        content.append(f"\nNotes: ", style="bold cyan")
+        content.append(f"{event.notes}")
+
+    panel = Panel(
+        content,
+        title=f"[bold magenta] {event.name}[/bold magenta]",
+        border_style="white",
+        box=box.ROUNDED,
+        expand=False
     )
 
-    # Info table
-    info = Table.grid(padding=1)
-    info.add_column(style="bold", no_wrap=True)
-    info.add_column()
-    info.add_column(style="bold", no_wrap=True)
-    info.add_column()
-
-    info.add_row(
-        "Contrat", f"#{data.contrat_id}",
-        "Client", f"#{data.client_id}",
-    )
-    support_display = f"[yellow]{data.support_contact_id}[/yellow]" if data.support_contact_id else "[dim]—[/dim]"
-    info.add_row(
-        "Support", support_display,
-        "", "",
-    )
-    info_panel = Panel(info, border_style="cyan", padding=(1, 2))
-
-    # Notes panel
-    notes_panel = Panel(
-        data.notes or "—",
-        title="[bold]Notes[/bold]",
-        border_style="dim",
-        padding=(1, 2)
-    )
-
-    # Print panels one after another
-    console.print(header_panel)
-    console.print(info_panel)
-    console.print(notes_panel)
+    console.print(panel)
 
 def _display_data_list(events: List[Event]):
     """
-    Affiche une liste d'évènements sous forme de cards, 4 par ligne
+    Display events table
     """
-    table = Table.grid(expand=True, padding=(1, 2))
-    # On met 4 colonnes pour 4 cards par ligne
-    for _ in range(4):
-        table.add_column(ratio=1)
+    if not events:
+        console.print("[yellow]Aucun événement à afficher[/yellow]")
+        return
 
-    row_panels = []
-    for i, event in enumerate(events, 1):
-        # Contenu de la card
-        card = Panel(
-            f"[bold]{event.name}[/bold]\n"
-            f"[cyan]{event.location}[/cyan]\n"
-            f"[magenta]{event.attendees} participants[/magenta]\n"
-            f"[green]{event.start_date:%d/%m/%Y %H:%M}[/green] → [red]{event.end_date:%d/%m/%Y %H:%M}[/red]",
-            title=f"Evènement # {event.id}",
-            border_style="cyan",
-            padding=(1,4)
+    table = Table(
+        title="[bold magenta] Liste des Événements[/bold magenta]",
+        box=box.ROUNDED,
+        show_header=True,
+        header_style="bold cyan",
+        border_style="white"
+    )
+
+    table.add_column("ID", style="dim", width=6, justify="right")
+    table.add_column("Nom", style="bold", min_width=20)
+    table.add_column("Début", width=16)
+    table.add_column("Fin", width=16)
+    table.add_column("Lieu", min_width=15)
+    table.add_column("Participants", width=12, justify="right")
+    table.add_column("Support", width=8, justify="center")
+
+    for event in events:
+
+        support = f"#{event.support_contact_id}" if event.support_contact_id else Text("-", style="dim")
+
+        table.add_row(
+            str(event.id or "-"),
+            event.name,
+            event.start_date.strftime("%d/%m/%Y %H:%M"),
+            event.end_date.strftime("%d/%m/%Y %H:%M"),
+            event.location,
+            str(event.attendees),
+            support
         )
-        row_panels.append(card)
-
-        # Dès que la ligne est complète ou fin de liste, on l'ajoute au tableau
-        if i % 4 == 0 or i == len(events):
-            table.add_row(*row_panels)
-            row_panels = []
-
+    console.print(f"\nTotal: [dim]{len(events)} événement(s)[/dim]")
     console.print(table)

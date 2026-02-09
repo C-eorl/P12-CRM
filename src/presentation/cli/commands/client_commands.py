@@ -1,7 +1,11 @@
-from typing import Optional
+from typing import Optional, List
 
 import typer
+from rich import box
 from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+from rich.text import Text
 
 from helpers.helpers import normalize
 
@@ -65,7 +69,7 @@ def create(
 
     # Affichage selon response.success
     if response.success:
-        console.print(f"\n[bold]Client #{response.client.id} créé[/bold]")
+        console.print(f"\n[bold]Client #{response.client.id} créé[/bold]\n")
         _display_data(response.client)
     else:
         console.print(f"[red] {response.error} [/red]")
@@ -115,7 +119,7 @@ def update(ctx: typer.Context, client_id: int):
     response = use_case.execute(request)
 
     if response.success:
-        console.print(f"\n[bold]Client #{response.client.id} modifié[/bold]")
+        console.print(f"\n[bold]Client #{response.client.id} modifié[/bold]\n")
         _display_data(response.client)
     else:
         console.print(f"[red] {response.error} [/red]")
@@ -124,7 +128,7 @@ def update(ctx: typer.Context, client_id: int):
 @client_app.command()
 def show(ctx: typer.Context, client_id: int):
     """
-    Command for show one client
+    Command for show client
     :param ctx: typer Context
     :param client_id: ID of client
     :return: None
@@ -132,7 +136,7 @@ def show(ctx: typer.Context, client_id: int):
     repo = SQLAlchemyClientRepository(ctx.obj["session"])
     use_case = GetClientUseCase(repo)
 
-    #verification ressource existe
+    # verification ressource existante
     if not repo.exist(client_id):
         console.print(f"[red] Client non trouvé [/red]")
         raise typer.Exit()
@@ -143,7 +147,6 @@ def show(ctx: typer.Context, client_id: int):
     response = use_case.execute(request)
 
     if response.success:
-        console.print(f"\n[bold]Client #{response.client.id}[/bold]")
         _display_data(response.client)
     else:
         console.print(f"[red] {response.error} [/red]")
@@ -172,10 +175,7 @@ def list(
     response = use_case.execute(request)
 
     if response.success:
-        console.print(f"Clients trouvés : {len(response.clients)}")
-        for client in response.clients:
-            console.print(f"\n[bold]Client #{client.id}[/bold]")
-            _display_data(client)
+        _display_data_list(response.clients)
     else:
         console.print(f"[red] {response.error} [/red]")
 
@@ -212,13 +212,65 @@ def delete(ctx: typer.Context, client_id: int):
     else:
         console.print(f"[red] {response.error} [/red]")
 
-def _display_data(data: Client):
+def _display_data(client: Client):
     """ Display data of Client """
 
-    console.print(f"  Nom: {data.fullname}")
-    console.print(f"  Email: {data.email}")
-    console.print(f"  Téléphone: {data.telephone}")
-    console.print(f"  Entreprise: {data.company_name}")
-    console.print(f"  Commercial: ID {data.commercial_contact_id}")
-    console.print(f"  Créé le: {data.created_at.strftime('%d/%m/%Y %H:%M')}")
-    console.print(f"  Mis à jour: {data.updated_at.strftime('%d/%m/%Y %H:%M')}\n")
+    content = Text()
+
+    content.append(f"\nID: ", style="bold cyan")
+    content.append(f"{client.id or 'N/A'}\n")
+
+    content.append(f"Adresse email: ", style="bold cyan")
+    content.append(f"{client.email}\n")
+
+    content.append(f"Téléphone: ", style="bold cyan")
+    content.append(f"{client.telephone}\n")
+
+    content.append(f"Nom de l'entreprise: ", style="bold cyan")
+    content.append(f"{client.company_name}\n")
+
+    content.append(f"Contact commercial: ", style="bold cyan")
+    content.append(f"{client.commercial_contact_id}\n")
+
+    panel = Panel(
+        content,
+        title=f"[bold magenta] {client.fullname}[/bold magenta]",
+        border_style="white",
+        box=box.ROUNDED,
+        expand=False
+    )
+
+    console.print(panel)
+
+def _display_data_list(clients: List[Client]):
+    """
+    Display clients table
+    """
+
+    table = Table(
+        title="[bold magenta] Liste des Clients[/bold magenta]",
+        box=box.ROUNDED,
+        show_header=True,
+        header_style="bold cyan",
+        border_style="white"
+    )
+
+    table.add_column("ID", style="dim", width=6, justify="right")
+    table.add_column("Nom complet", style="bold", min_width=20)
+    table.add_column("Email", width=16)
+    table.add_column("Téléphone", width=16)
+    table.add_column("Non de l'entreprise", min_width=15)
+    table.add_column("Contact commercial", width=12, justify="right")
+
+    for client in clients:
+
+        table.add_row(
+            str(client.id or "-"),
+            client.fullname,
+            str(client.email),
+            str(client.telephone),
+            client.company_name,
+            str(client.commercial_contact_id),
+        )
+    console.print(f"\nTotal: [dim]{len(clients)} client(s)[/dim]")
+    console.print(table)
