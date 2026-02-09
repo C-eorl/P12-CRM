@@ -144,9 +144,9 @@ class SQLAlchemyUserRepository:
     def find_all(self, criteres: dict) -> List[User]:
         """Finds all users in the database"""
         stmt = select(UserModel)
-
-        if criteres["role"] is not None:
-            stmt = stmt.where(UserModel.role == criteres["role"])
+        role = criteres.get("role")
+        if role is not None:
+            stmt = stmt.where(UserModel.role == role)
 
         result = self.session.execute(stmt)
         db_users = result.scalars().all()
