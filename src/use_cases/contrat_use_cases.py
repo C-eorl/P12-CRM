@@ -115,7 +115,7 @@ class ContratFilter(Enum):
 @dataclass
 class ListContratRequest:
     commercial_contact_id: int
-    list_filter: ContratFilter
+    list_filter: Optional[ContratFilter]
 
 @dataclass
 class ListContratResponse:

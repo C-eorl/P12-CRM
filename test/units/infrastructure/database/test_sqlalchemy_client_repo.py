@@ -40,7 +40,8 @@ def test_find_by_invalid_id(client_SQLAlchemy_repository):
 
 def test_find_all(client_SQLAlchemy_repository, session):
     """test find all method """
-    all_clients = client_SQLAlchemy_repository.find_all()
+    criteres = dict()
+    all_clients = client_SQLAlchemy_repository.find_all(criteres)
 
     assert isinstance(all_clients, List)
     actual_count_client = session.query(ClientModel).count()

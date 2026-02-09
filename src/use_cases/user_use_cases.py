@@ -135,8 +135,7 @@ class UserFilter(Enum):
 
 @dataclass
 class ListUserRequest:
-    role: Role
-    list_filter: UserFilter
+    list_filter: Optional[UserFilter]
 
 @dataclass
 class ListUserResponse:

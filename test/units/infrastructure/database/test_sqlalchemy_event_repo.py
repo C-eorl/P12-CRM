@@ -42,35 +42,12 @@ def test_find_by_invalid_id(event_SQLAlchemy_repository):
 
 def test_find_all(event_SQLAlchemy_repository, session):
     """test find all method """
-    all_events = event_SQLAlchemy_repository.find_all()
+    criteres = dict()
+    all_events = event_SQLAlchemy_repository.find_all(criteres)
 
     assert isinstance(all_events, List)
     actual_count_events = session.query(EventModel).count()
     assert len(all_events) == actual_count_events
-
-def test_find_by_contrat_id(event_SQLAlchemy_repository, session):
-    """test find all method """
-    all_events = event_SQLAlchemy_repository.find_by_contrat_id(2)
-
-    assert isinstance(all_events, List)
-    actual_count_event = session.query(EventModel).where(EventModel.contrat_id == 2).count()
-    assert len(all_events) == actual_count_event
-
-def test_find_by_support_contact_id(event_SQLAlchemy_repository, session):
-    """test find all method """
-    all_events = event_SQLAlchemy_repository.find_by_support_contact_id(6)
-
-    assert isinstance(all_events, List)
-    actual_count_event = session.query(EventModel).where(EventModel.support_contact_id == 6).count()
-    assert len(all_events) == actual_count_event
-
-def test_find_by_client_id(event_SQLAlchemy_repository, session):
-    """test find all method """
-    all_events = event_SQLAlchemy_repository.find_by_client_id(1)
-
-    assert isinstance(all_events, List)
-    actual_count_event = session.query(EventModel).where(EventModel.client_id == 1).count()
-    assert len(all_events) == actual_count_event
 
 def test_delete(event_SQLAlchemy_repository, session, event):
     """test delete method """

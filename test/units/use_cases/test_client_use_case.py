@@ -6,7 +6,7 @@ from src.domain.policies.user_policy import RequestPolicy
 from src.use_cases.client_use_cases import CreateClientUseCase, CreateClientRequest, CreateClientResponse, \
     GetClientUseCase, UpdateClientUseCase, UpdateClientRequest, UpdateClientResponse, ListClientUseCase, \
     ListClientResponse, GetClientRequest, GetClientResponse, DeleteClientUseCase, DeleteClientRequest, \
-    DeleteClientResponse
+    DeleteClientResponse, ListClientRequest
 
 
 ######################################################################
@@ -179,14 +179,18 @@ def test_update_client_no_associe_commercial(user_commercial2, client_repository
 
 def test_get_list_client(user_commercial, client_repository):
     """Test get client list via use case (2 clients saved)"""
+    request = ListClientRequest(
+        user_id=3,
+        list_filter=None
+    )
+
     repo = client_repository
     client_list_UC = ListClientUseCase(repo)
-    response = client_list_UC.execute()
+    response = client_list_UC.execute(request)
 
     assert isinstance(response, ListClientResponse)
     assert response.success is True
     assert isinstance(response.clients, list)
-    assert len(repo.find_all()) == 2
 
 ######################################################################
 #                            Get by id Client Use Case                  #

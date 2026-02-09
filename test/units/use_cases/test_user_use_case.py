@@ -5,7 +5,7 @@ from src.domain.policies.user_policy import RequestPolicy
 from src.infrastructures.security.security import BcryptPasswordHasher
 from src.use_cases.user_use_cases import CreateUserUseCase, CreateUserRequest, CreateUserResponse, UpdateUserUseCase, \
     UpdateUserRequest, UpdateUserResponse, ListUserUseCase, ListUserResponse, GetUserRequest, GetUserUseCase, \
-    GetUserResponse, DeleteUserResponse, DeleteUserRequest, DeleteUserUseCase
+    GetUserResponse, DeleteUserResponse, DeleteUserRequest, DeleteUserUseCase, ListUserRequest
 
 
 ######################################################################
@@ -65,9 +65,13 @@ def test_update_user(user_repository, user_gestion):
 ######################################################################
 def test_get_list_user(user_repository):
     """Test get users list via use case (3 users saved)"""
+    request = ListUserRequest(
+        list_filter=None
+    )
+
     repo = user_repository
     user_list_UC = ListUserUseCase(repo)
-    response = user_list_UC.execute()
+    response = user_list_UC.execute(request)
 
     assert isinstance(response, ListUserResponse)
     assert response.success is True
@@ -100,10 +104,10 @@ def test_delete_user(user_repository,user_gestion):
     repo = user_repository
     user_delete_UC = DeleteUserUseCase(repo)
 
-    init_count_user = len(repo.find_all())
+    user = repo.save(user_gestion)
 
     request = DeleteUserRequest(
-        user_id=2,
+        user_id=user.id,
         authorization=RequestPolicy(
             user={"user_current_id": 1, "user_current_role": Role.GESTION},
             ressource="USER",
@@ -114,5 +118,4 @@ def test_delete_user(user_repository,user_gestion):
 
     assert isinstance(response, DeleteUserResponse)
     assert response.success is True
-    current_count_user = len(repo.find_all())
-    assert current_count_user == init_count_user - 1
+    assert repo.find_by_id(user.id) is None

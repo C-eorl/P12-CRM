@@ -41,27 +41,14 @@ def test_find_by_invalid_id(contrat_SQLAlchemy_repository):
 
 def test_find_all(contrat_SQLAlchemy_repository, session):
     """test find all method """
-    all_contrats = contrat_SQLAlchemy_repository.find_all()
+    criteres = dict()
+    all_contrats = contrat_SQLAlchemy_repository.find_all(criteres)
 
     assert isinstance(all_contrats, List)
     actual_count_contrat = session.query(ContratModel).count()
     assert len(all_contrats) == actual_count_contrat
 
-def test_find_by_commercial_contact(contrat_SQLAlchemy_repository, session):
-    """test find all method """
-    all_contrats = contrat_SQLAlchemy_repository.find_all_assign(3)
 
-    assert isinstance(all_contrats, List)
-    actual_count_contrat = session.query(ContratModel).where(ContratModel.commercial_contact_id == 3).count()
-    assert len(all_contrats) == actual_count_contrat
-
-def test_find_by_client_id(contrat_SQLAlchemy_repository, session):
-    """test find all method """
-    all_contrats = contrat_SQLAlchemy_repository.find_by_client_id(1)
-
-    assert isinstance(all_contrats, List)
-    actual_count_contrat = session.query(ContratModel).where(ContratModel.client_id == 1).count()
-    assert len(all_contrats) == actual_count_contrat
 
 def test_delete(contrat_SQLAlchemy_repository, session, contrat):
     """test delete method """

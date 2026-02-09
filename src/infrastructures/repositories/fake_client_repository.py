@@ -32,7 +32,7 @@ class FakeClientRepository:
     def find_by_id(self, client_id: int) -> Optional[Client]:
         return self.clients.get(client_id)
 
-    def find_all(self) -> List[Client]:
+    def find_all(self, criteres) -> List[Client]:
         return list(self.clients.values())
 
     def delete(self, client_id: int) -> None:
@@ -65,7 +65,7 @@ class FakeUserRepository:
     def find_by_id(self, user_id: int) -> Optional[User]:
         return self.users.get(user_id)
 
-    def find_all(self) -> List[User]:
+    def find_all(self, criteres) -> List[User]:
         return list(self.users.values())
 
     def find_by_email(self, email: str) -> Optional[User]:
@@ -73,9 +73,6 @@ class FakeUserRepository:
             if str(user.email) == email:
                 return user
         return None
-
-    def find_by_role(self, role: Role) -> List[User]:
-        return [user for user in self.users.values() if user.role == role]
 
     def delete(self, user_id: int) -> None:
         self.users.pop(user_id, None)
@@ -108,20 +105,8 @@ class FakeContratRepository:
     def find_by_id(self, contrat_id: int) -> Optional[Contrat]:
         return self.contrats.get(contrat_id)
 
-    def find_all(self) -> List[Contrat]:
+    def find_all(self, criteres) -> List[Contrat]:
         return list(self.contrats.values())
-
-    def find_by_client_id(self, client_id: int) -> List[Contrat]:
-        return [
-            contrat for contrat in self.contrats.values()
-            if contrat.client_id == client_id
-        ]
-
-    def find_by_commercial_contact(self, commercial_contact_id: int) -> List[Contrat]:
-        return [
-            contrat for contrat in self.contrats.values()
-            if contrat.commercial_contact_id == commercial_contact_id
-        ]
 
     def delete(self, contrat_id: int) -> None:
         self.contrats.pop(contrat_id, None)
@@ -158,26 +143,8 @@ class FakeEventRepository:
     def find_by_id(self, event_id: int) -> Optional[Event]:
         return self.events.get(event_id)
 
-    def find_all(self) -> List[Event]:
+    def find_all(self, criteres) -> List[Event]:
         return list(self.events.values())
-
-    def find_by_contrat_id(self, contrat_id: int) -> List[Event]:
-        return [
-            event for event in self.events.values()
-            if event.contrat_id == contrat_id
-        ]
-
-    def find_by_client_id(self, client_id: int) -> List[Event]:
-        return [
-            event for event in self.events.values()
-            if event.client_id == client_id
-        ]
-
-    def find_by_support_contact_id(self, support_contact_id: int) -> List[Event]:
-        return [
-            event for event in self.events.values()
-            if event.support_contact_id == support_contact_id
-        ]
 
     def delete(self, event_id: int) -> None:
         self.events.pop(event_id, None)

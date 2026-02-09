@@ -39,7 +39,8 @@ def test_find_by_invalid_id(user_SQLAlchemy_repository):
 
 def test_find_all(user_SQLAlchemy_repository, session):
     """test find all method """
-    all_users = user_SQLAlchemy_repository.find_all()
+    criteres = dict()
+    all_users = user_SQLAlchemy_repository.find_all(criteres)
 
     assert isinstance(all_users, List)
     actual_count_user = session.query(UserModel).count()
@@ -57,15 +58,6 @@ def test_find_by_invalid_email(user_SQLAlchemy_repository):
     user_find = user_SQLAlchemy_repository.find_by_email("invalid_email@dd.fr")
 
     assert user_find is None
-
-def test_find_by_role(user_SQLAlchemy_repository, session):
-    """test find by role method """
-    users_find = user_SQLAlchemy_repository.find_by_role("SUPPORT")
-
-    assert isinstance(users_find, List)
-    actual_count_user = session.query(UserModel).where(UserModel.role == "SUPPORT").count()
-    assert len(users_find) == actual_count_user
-
 
 def test_delete(user_SQLAlchemy_repository, session, user_commercial):
     """test delete method """

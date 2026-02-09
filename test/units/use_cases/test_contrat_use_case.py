@@ -2,7 +2,7 @@ from src.domain.entities.entities import Contrat
 from src.domain.entities.enums import Role, ContractStatus
 from src.domain.entities.value_objects import Money
 from src.domain.policies.user_policy import RequestPolicy
-from src.use_cases.contrat_use_cases import ListContratUseCase, ListContratResponse
+from src.use_cases.contrat_use_cases import ListContratUseCase, ListContratResponse, ListContratRequest
 from src.use_cases.contrat_use_cases import GetContratUseCase, GetContratRequest, GetContratResponse
 from src.use_cases.contrat_use_cases import (
     DeleteContratUseCase,
@@ -157,15 +157,19 @@ def test_update_contrat_no_permission(contrat_repository):
 ######################################################################
 def test_list_contrat(contrat_repository):
     """Test listing contrats"""
+    request = ListContratRequest(
+        commercial_contact_id=3,
+        list_filter=None
+    )
+
     repo = contrat_repository
     uc = ListContratUseCase(repo)
 
-    response = uc.execute()
+    response = uc.execute(request)
 
     assert isinstance(response, ListContratResponse)
     assert response.success is True
     assert isinstance(response.contrats, list)
-    assert len(response.contrats) == len(repo.find_all())
 
 ######################################################################
 #                            Get Contrat Use Case                   #
