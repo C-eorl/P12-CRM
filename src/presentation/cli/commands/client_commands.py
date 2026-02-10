@@ -26,7 +26,7 @@ def permission(ctx:typer.Context):
     if ctx.invoked_subcommand not in ['show', "list"]:
         if ctx.obj["current_user"]["user_current_role"] not in  [Role.COMMERCIAL, Role.ADMIN]:
             console.print("[red]Vous êtes pas authorisé à utiliser cette commande[/red]")
-            raise typer.Exit()
+            raise typer.Exit(1)
     ctx.obj["ressource"] = "CLIENT"
 
 @client_app.command()
@@ -72,7 +72,7 @@ def create(
         console.print(f"\n[bold]Client #{response.client.id} créé[/bold]\n")
         _display_data(response.client)
     else:
-        console.print(f"[red] {response.error} [/red]")
+        console.print(f"[red] Erreur: {response.error} [/red]")
 
 @client_app.command()
 def update(ctx: typer.Context, client_id: int):
