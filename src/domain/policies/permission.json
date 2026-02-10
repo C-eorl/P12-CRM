@@ -15,7 +15,8 @@
         "EVENT": {
               "create": {},
               "update": {},
-              "delete": {}
+              "delete": {},
+              "assign": {}
         },
         "USER": {
               "create": {},
