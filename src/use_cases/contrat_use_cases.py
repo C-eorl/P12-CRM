@@ -41,6 +41,12 @@ class CreateContratUseCase:
                 error="Seuls les membres gestion peuvent créer des contrats"
             )
 
+        if request.contrat_amount <= Money(0):
+            return CreateContratResponse(
+                success=False,
+                error="Le contrat doit avoir un montant supèrieur à 0"
+            )
+
         contrat = Contrat(
             id=None,
             client_id=request.client_id,
@@ -58,7 +64,6 @@ class CreateContratUseCase:
 class UpdateContratRequest:
     contrat_id: int
     contrat_amount: Optional[Money]
-    status: Optional[ContractStatus]
     authorization: RequestPolicy
 
 
@@ -93,13 +98,9 @@ class UpdateContratUseCase:
                 error="Seuls les membres gestion peuvent modifier des contrats"
             )
 
-
-
         if request.contrat_amount is not None:
             contrat.contrat_amount = Money(request.contrat_amount)
 
-        if request.status is not None:
-            contrat.status = request.status
 
         updated_contrat = self.repository.save(contrat)
         return UpdateContratResponse(success=True, contrat=updated_contrat)
@@ -250,7 +251,7 @@ class SignContratUseCase:
         if not policy.is_allowed():
             return SignContratResponse(
                 success=False,
-                error="Seuls les membres "" peuvent supprimer des contrats"
+                error="Seuls les membres commercials peuvent signer des contrats"
             )
 
         try:
