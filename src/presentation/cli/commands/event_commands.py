@@ -15,7 +15,7 @@ from src.domain.policies.user_policy import RequestPolicy
 from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyEventRepository, SQLAlchemyUserRepository
 from src.use_cases.event_use_cases import ListEventUseCase, GetEventUseCase, GetEventRequest, UpdateEventUseCase, \
     UpdateEventRequest, CreateEventUseCase, CreateEventRequest, AssignSupportEventRequest, AssignSupportEventUseCase, \
-    EventFilter, ListEventRequest
+    EventFilter, ListEventRequest, DeleteEventRequest, DeleteEventUseCase
 
 event_app = typer.Typer()
 console = Console()
@@ -24,17 +24,17 @@ console = Console()
 def permission(ctx:typer.Context):
     if ctx.invoked_subcommand not in ['show', "list"]:
         if ctx.invoked_subcommand == "assign":
-            if ctx.obj["current_user"]["user_role"] not in [Role.GESTION, Role.ADMIN]:
+            if ctx.obj["current_user"]["user_current_role"] not in [Role.GESTION, Role.ADMIN]:
                 console.print("[red]Vous êtes pas authorisé à utiliser cette commande[/red]")
                 raise typer.Exit()
 
         if ctx.invoked_subcommand == "create":
-            if ctx.obj["current_user"]["user_role"] not in [Role.COMMERCIAL, Role.ADMIN]:
+            if ctx.obj["current_user"]["user_current_role"] not in [Role.COMMERCIAL, Role.ADMIN]:
                 console.print("[red]Vous êtes pas authorisé à utiliser cette commande[/red]")
                 raise typer.Exit()
 
         if ctx.invoked_subcommand == "update":
-            if ctx.obj["current_user"]["user_role"] not in [Role.SUPPORT, Role.ADMIN]:
+            if ctx.obj["current_user"]["user_current_role"] not in [Role.SUPPORT, Role.ADMIN]:
                 console.print("[red]Vous êtes pas authorisé à utiliser cette commande[/red]")
                 raise typer.Exit()
     ctx.obj["ressource"] = "EVENT"
@@ -45,7 +45,6 @@ def create(
         name: str = typer.Option(None, prompt=True),
         contrat_id: int = typer.Option(None, prompt=True),
         client_id: int = typer.Option(None, prompt=True),
-        support_contact_id: Optional[int] = typer.Option("", prompt=True),
         start_date: datetime = typer.Option(..., prompt=True),
         end_date: datetime = typer.Option(..., prompt=True),
         location: str = typer.Option(..., prompt=True),
@@ -58,7 +57,6 @@ def create(
     :param name: name of the event
     :param contrat_id: ID contrat linked to the event
     :param client_id: ID client linked to the event
-    :param support_contact_id: ID support contact linked to the event
     :param start_date: start date of the event
     :param end_date: end date of the event
     :param location: location of the event
@@ -76,7 +74,6 @@ def create(
         name= name,
         contrat_id = contrat_id,
         client_id = client_id,
-        support_contact_id = support_contact_id,
         start_date=start_date,
         end_date=end_date,
         location=location,
@@ -131,10 +128,10 @@ def update(ctx: typer.Context, event_id: int):
     request = UpdateEventRequest(
         event_id=event_id,
         name=name,
-        start_date=start_date,
-        end_date=end_date,
+        start_date=datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S"),
+        end_date=datetime.strptime(end_date,"%Y-%m-%d %H:%M:%S"),
         location=location,
-        attendees=attendees,
+        attendees=int(attendees),
         notes=notes,
         authorization=policy
     )
@@ -218,7 +215,7 @@ def assign(ctx: typer.Context, event_id: int):
         action="assign"
     )
 
-    support_user_id= typer.prompt("Id utilisateur Support: "),
+    support_user_id= typer.prompt("Id utilisateur Support: ")
 
     request = AssignSupportEventRequest(
         event_id=event_id,
@@ -230,6 +227,39 @@ def assign(ctx: typer.Context, event_id: int):
 
     if response.success:
         console.print(f"\n[bold]Évènement #{event_id} - assigné à User #: {support_user_id}[bold]")
+    else:
+        console.print(f"[red] {response.error} [/red]")
+
+@event_app.command(help="Supprimer un évènement")
+def delete(ctx: typer.Context, event_id: int):
+    """
+    Command for delete contrat
+    :param ctx: typer Context
+    :param event_id: ID of contrat
+    :return: None
+    """
+    repo = SQLAlchemyEventRepository(ctx.obj["session"])
+    use_case = DeleteEventUseCase(repo)
+
+    #verification ressource existe
+    if not repo.exist(event_id):
+        console.print(f"[red] Evènement non trouvé [/red]")
+        raise typer.Exit()
+
+    policy = RequestPolicy(
+        user=ctx.obj["current_user"],
+        ressource=ctx.obj["ressource"],
+        action="delete"
+    )
+    request = DeleteEventRequest(
+        event_id=event_id,
+        authorization= policy,
+    )
+
+    response = use_case.execute(request)
+
+    if response.success:
+        console.print(f"\n[bold]Evènement #{event_id} supprimé[/bold]")
     else:
         console.print(f"[red] {response.error} [/red]")
 
