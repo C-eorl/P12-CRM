@@ -4,9 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, List
 
-from src.domain.entities.entities import User, Event
-from src.domain.entities.enums import ContractStatus
-from src.domain.entities.value_objects import Money
+from src.domain.entities.entities import Event
 from src.domain.interfaces.repository import EventRepository, UserRepository
 from src.domain.policies.user_policy import UserPolicy, RequestPolicy
 
@@ -16,7 +14,6 @@ class CreateEventRequest:
     name: str
     contrat_id: int
     client_id: int
-    support_contact_id: Optional[int]
     start_date: datetime
     end_date: datetime
     location: str
@@ -70,7 +67,7 @@ class CreateEventUseCase:
             name =  request.name,
             contrat_id = request.contrat_id,
             client_id = request.client_id,
-            support_contact_id = request.support_contact_id,
+            support_contact_id = None,
             start_date = request.start_date,
             end_date = request.end_date,
             location = request.location,
@@ -147,7 +144,7 @@ class EventFilter(Enum):
 @dataclass
 class ListEventRequest:
     support_contact_id: int
-    list_filter: EventFilter
+    list_filter: Optional[EventFilter]
 
 @dataclass
 class ListEventResponse:
