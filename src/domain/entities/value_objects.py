@@ -1,9 +1,9 @@
 import re
 from dataclasses import dataclass
 from decimal import Decimal
+from functools import total_ordering
 
 from src.domain.entities.exceptions import InvalidPhoneError, InvalidEmailError, InvalidAmountError
-
 
 @dataclass(frozen=True)
 class Money:
@@ -40,6 +40,11 @@ class Money:
         if not isinstance(other, Money):
             raise TypeError("Comparaison impossible")
         return self.amount < other.amount
+
+    def __le__(self, other):
+        if not isinstance(other, Money):
+            raise TypeError("Comparaison impossible")
+        return self.amount <= other.amount
 
 @dataclass(frozen=True)
 class Telephone:

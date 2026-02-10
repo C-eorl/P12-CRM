@@ -61,10 +61,6 @@ class Client:
             self.company_name = company_name
         self.updated_at = datetime.now()
 
-    def can_be_updated_by(self, user: User) -> bool:
-        if user.id == self.commercial_contact_id:
-            return True
-        return False
 
 @dataclass
 class Contrat:
@@ -98,14 +94,6 @@ class Contrat:
     def is_fully_paid(self) -> bool:
         return self.balance_due.amount == 0
 
-    def can_be_updated_by(self, user: User) -> bool:
-        """Verified if user can be updated"""
-        if user.id == self.commercial_contact_id:
-            return True
-        if user.is_gestion():
-            return True
-        return False
-
     def __str__(self):
         return f"Contrat #{self.id} - {self.status} ({self.contrat_amount})"
 
@@ -138,13 +126,6 @@ class Event:
         """Verified if assigned support user"""
         return self.support_contact_id is not None
 
-    def can_be_updated_by(self, user: User) -> bool:
-        """Verified if user can be updated"""
-        if user.is_gestion():
-            return True
-        if user.is_support() and user.id == self.support_contact_id:
-            return True
-        return False
 
     def update_info(self, name: Optional[str], start_date: Optional[datetime],
                     end_date: Optional[datetime],location: Optional[str],
@@ -168,7 +149,7 @@ class Event:
 
         if end_date is not None:
             if not isinstance(end_date, datetime):
-                raise BusinessRuleViolation("la date de début doit être une date valide")
+                raise BusinessRuleViolation("la date de fin doit être une date valide")
             if end_date <= start_date:
                 raise BusinessRuleViolation(
                     "La date de fin doit être après la date de début"
