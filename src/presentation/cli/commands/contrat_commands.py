@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Optional, List
 
 import typer
@@ -9,13 +10,15 @@ from rich.text import Text
 
 from helpers.helpers import normalize
 from src.domain.entities.entities import Contrat
-from src.domain.entities.enums import Role, ContractStatus
+from src.domain.entities.enums import Role
 from src.domain.entities.value_objects import Money
 from src.domain.policies.user_policy import RequestPolicy
-from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyContratRepository
+from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyContratRepository, \
+    SQLAlchemyClientRepository, SQLAlchemyUserRepository
 from src.use_cases.contrat_use_cases import CreateContratRequest, CreateContratUseCase, UpdateContratRequest, \
     UpdateContratUseCase, GetContratRequest, GetContratUseCase, ListContratUseCase, SignContratRequest, \
-    SignContratUseCase, RecordPaymentContratRequest, RecordPaymentContratUseCase, ContratFilter, ListContratRequest
+    SignContratUseCase, RecordPaymentContratRequest, RecordPaymentContratUseCase, ContratFilter, ListContratRequest, \
+    DeleteContratUseCase, DeleteContratRequest
 
 contrat_app = typer.Typer()
 console = Console()
@@ -23,10 +26,17 @@ console = Console()
 @contrat_app.callback()
 def permission(ctx:typer.Context):
     """Callback - for show, list commands, verify user role """
+
     if ctx.invoked_subcommand not in ['show', "list"]:
+        pass
+    elif ctx.invoked_subcommand == "sign":
+        if ctx.obj["current_user"]["user_current_role"] not in [Role.COMMERCIAL, Role.ADMIN]:
+            console.print("[red]Vous êtes pas authorisé à utiliser cette commande[/red]")
+            raise typer.Exit(1)
+    else:
         if ctx.obj["current_user"]["user_current_role"] not in [Role.GESTION, Role.ADMIN]:
             console.print("[red]Vous êtes pas authorisé à utiliser cette commande[/red]")
-            raise typer.Exit()
+            raise typer.Exit(1)
     ctx.obj["ressource"] = "CONTRAT"
 
 @contrat_app.command(help="Créer un contrat")
@@ -44,6 +54,24 @@ def create(
     :param contrat_amount: amount of the contrat
     :return: None
     """
+    repo = SQLAlchemyContratRepository(ctx.obj["session"])
+    client_repo = SQLAlchemyClientRepository(ctx.obj["session"])
+    user_repo = SQLAlchemyUserRepository(ctx.obj["session"])
+
+    if not client_repo.exist(client_id):
+        console.print(f"[red] Client non trouvé [/red]")
+        raise typer.Exit(1)
+
+    if not user_repo.exist(commercial_contact_id) :
+        console.print(f"[red] Utilisateur non trouvé [/red]")
+        raise typer.Exit(1)
+
+    user_commercial = user_repo.find_by_id(commercial_contact_id)
+    if not user_commercial.is_commercial():
+        console.print(f"[red] L'utilisateur commercial selectionné n'est pas du département commercial [/red]")
+        raise typer.Exit(1)
+    use_case = CreateContratUseCase(repo)
+
     policy = RequestPolicy(
         user=ctx.obj["current_user"],
         ressource=ctx.obj["ressource"],
@@ -56,8 +84,6 @@ def create(
         contrat_amount =  Money(contrat_amount),
         authorization=policy
     )
-    repo = SQLAlchemyContratRepository(ctx.obj["session"])
-    use_case = CreateContratUseCase(repo)
     response = use_case.execute(request)
 
     if response.success:
@@ -90,15 +116,12 @@ def update(ctx: typer.Context,contrat_id: int):
     )
 
     contrat_amount = typer.prompt("Montant du contrat", default=0)
-    status: ContractStatus = typer.prompt('Statut', default=ContractStatus.UNSIGNED)
 
     contrat_amount = normalize(contrat_amount)
-    status = normalize(status)
 
     request = UpdateContratRequest(
         contrat_id=contrat_id,
         contrat_amount = contrat_amount ,
-        status = status,
         authorization=policy
     )
     response = use_case.execute(request)
@@ -229,6 +252,39 @@ def pay(ctx : typer.Context, contrat_id: int):
         console.print(f"Montant du paiement: {payment}")
         console.print(f"Montant restant: {response.contrat.balance_due.amount}")
         console.print(f"Montant total: {response.contrat.contrat_amount.amount}")
+    else:
+        console.print(f"[red] {response.error} [/red]")
+
+@contrat_app.command(help="Supprimer un contrat")
+def delete(ctx: typer.Context, contrat_id: int):
+    """
+    Command for delete contrat
+    :param ctx: typer Context
+    :param contrat_id: ID of contrat
+    :return: None
+    """
+    repo = SQLAlchemyContratRepository(ctx.obj["session"])
+    use_case = DeleteContratUseCase(repo)
+
+    #verification ressource existe
+    if not repo.exist(contrat_id):
+        console.print(f"[red] Contrat non trouvé [/red]")
+        raise typer.Exit()
+
+    policy = RequestPolicy(
+        user=ctx.obj["current_user"],
+        ressource=ctx.obj["ressource"],
+        action="delete"
+    )
+    request = DeleteContratRequest(
+        contrat_id=contrat_id,
+        authorization= policy,
+    )
+
+    response = use_case.execute(request)
+
+    if response.success:
+        console.print(f"\n[bold]Contrat #{contrat_id} supprimé[/bold]")
     else:
         console.print(f"[red] {response.error} [/red]")
 
