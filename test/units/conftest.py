@@ -15,7 +15,7 @@ from src.infrastructures.database.models import Base
 from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyClientRepository, SQLAlchemyUserRepository, \
     SQLAlchemyContratRepository, SQLAlchemyEventRepository
 from src.infrastructures.repositories.fake_client_repository import FakeClientRepository, FakeUserRepository, \
-    FakeContratRepository
+    FakeContratRepository, FakeEventRepository
 
 from dotenv import load_dotenv
 
@@ -95,9 +95,25 @@ def event():
     return Event(
         id=None,
         name="test event",
-        contrat_id= 1,
-        client_id= 1,
-        support_contact_id= 5,
+        contrat_id= 4,
+        client_id= 3,
+        support_contact_id= 60,
+        start_date= datetime(2026, 5,15),
+        end_date= datetime(2026, 5,20),
+        location="2 rue des test, Nantes",
+        attendees= 150,
+        notes=""
+        )
+
+
+@pytest.fixture
+def event2():
+    return Event(
+        id=None,
+        name="test event2",
+        contrat_id= 4,
+        client_id= 3,
+        support_contact_id= None,
         start_date= datetime(2026, 5,15),
         end_date= datetime(2026, 5,20),
         location="2 rue des test, Nantes",
@@ -125,6 +141,13 @@ def contrat_repository(contrat, contrat2):
     repo = FakeContratRepository()
     repo.save(contrat)
     repo.save(contrat2)
+    return repo
+
+@pytest.fixture
+def event_repository(event,event2, client):
+    repo = FakeEventRepository()
+    repo.save(event)
+    repo.save(event2)
     return repo
 
 @pytest.fixture(scope="function")
