@@ -67,7 +67,7 @@ def create(
     else:
         console.print(f"[red] {response.error} [/red]")
 
-@user_app.command("Modifier un utilisateur")
+@user_app.command(help="Modifier un utilisateur")
 def update(ctx: typer.Context, user_id: int):
     """
     Command to update existing user
@@ -146,7 +146,6 @@ def list(
     """
 
     request = ListUserRequest(
-        role= ctx.obj["current_user"]["user_current_role"],
         list_filter=list_filter,
     )
 
@@ -173,7 +172,7 @@ def delete(ctx: typer.Context, user_id: int):
 
     #verification ressource existe
     if not repo.exist(user_id):
-        console.print(f"[red] Client non trouvé [/red]")
+        console.print(f"[red] Utilisateur non trouvé [/red]")
         raise typer.Exit()
 
     policy = RequestPolicy(
