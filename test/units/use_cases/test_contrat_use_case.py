@@ -93,7 +93,6 @@ def test_update_contrat(contrat_repository):
     request = UpdateContratRequest(
         contrat_id=1,
         contrat_amount=Money(2000),
-        status=ContractStatus.SIGNED,
         authorization=RequestPolicy(
             user={"user_current_id": 1, "user_current_role": Role.GESTION},
             ressource="CONTRAT",
@@ -108,7 +107,6 @@ def test_update_contrat(contrat_repository):
 
     updated = repo.find_by_id(1)
     assert updated.contrat_amount.amount == 2000
-    assert updated.status == ContractStatus.SIGNED
 
 def test_update_contrat_not_found(contrat_repository):
     """Test updating a non-existing contrat"""
@@ -118,7 +116,6 @@ def test_update_contrat_not_found(contrat_repository):
     request = UpdateContratRequest(
         contrat_id=999,
         contrat_amount=Money(1000),
-        status=None,
         authorization=RequestPolicy(
             user={"user_current_id": 1, "user_current_role": Role.GESTION},
             ressource="CONTRAT",
@@ -139,7 +136,6 @@ def test_update_contrat_no_permission(contrat_repository):
     request = UpdateContratRequest(
         contrat_id=1,
         contrat_amount=Money(1500),
-        status=None,
         authorization=RequestPolicy(
             user={"user_current_id": 2, "user_current_role": Role.COMMERCIAL},
             ressource="CONTRAT",
