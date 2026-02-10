@@ -1,5 +1,3 @@
-import pytest
-
 from src.domain.entities.entities import Client
 from src.domain.entities.enums import Role
 from src.domain.policies.user_policy import RequestPolicy
