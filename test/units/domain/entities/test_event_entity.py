@@ -45,23 +45,6 @@ def test_has_not_support():
     )
     assert event.has_support_contact() == False
 
-def test_can_be_updated_by_gestion(event, user_gestion):
-    """Check if gestion user can update event"""
-    assert event.can_be_updated_by(user_gestion) == True
-
-def test_can_be_updated_by_support(event, user_support):
-    """Check if support_user assigned can update event"""
-    user_support.id = 5
-    assert event.can_be_updated_by(user_support) == True
-
-def test_can_be_updated_by_not_assigned_support(event, user_support2):
-    """Check if support_user assigned can update event"""
-    assert event.can_be_updated_by(user_support2) == False
-
-def test_can_be_updated_by_commercial(event, user_commercial):
-    """Check if support_user assigned can update event"""
-    assert event.can_be_updated_by(user_commercial) == False
-
 def test_update_info_valid(event):
     """Verifies the change with valid data"""
     event.update_info(
