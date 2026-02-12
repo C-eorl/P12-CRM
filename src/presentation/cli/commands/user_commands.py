@@ -7,10 +7,11 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+from helpers.helper_cli import error_display
 from helpers.helpers import normalize
 from src.domain.entities.entities import User
 from src.domain.entities.enums import Role
-from src.domain.policies.user_policy import RequestPolicy
+from src.domain.policies.user_policy import RequestPolicy, UserPolicy
 from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyUserRepository
 from src.infrastructures.security.security import BcryptPasswordHasher
 from src.use_cases.user_use_cases import CreateUserRequest, CreateUserUseCase, UpdateUserRequest, UpdateUserUseCase, \
@@ -21,11 +22,25 @@ console = Console()
 
 @user_app.callback()
 def permission(ctx:typer.Context):
-    if ctx.invoked_subcommand not in ['show', "list"]:
-        if ctx.obj["current_user"]["user_current_role"] not in [Role.GESTION, Role.ADMIN]:
-            console.print("[red]Vous êtes pas authorisé à utiliser cette commande[/red]")
-            raise typer.Exit()
+    """Callback - verify user role """
     ctx.obj["ressource"] = "USER"
+
+    action = ctx.invoked_subcommand
+    if action in ["list", "show"]:
+        return
+
+    request = RequestPolicy(
+        user=ctx.obj["current_user"],
+        ressource=ctx.obj["ressource"],
+        action=action,
+        context=None
+    )
+
+    policy = UserPolicy(request)
+    if not policy.is_allowed():
+        error_display("Permission", "Vous êtes pas authorisé à utiliser cette commande")
+        raise typer.Exit(1)
+
 
 @user_app.command(help="Créer un utilisateur")
 def create(
@@ -65,7 +80,7 @@ def create(
         console.print(f"\n[bold]Utilisateur #{response.user.id} créé[/bold]")
         _display_data(response.user)
     else:
-        console.print(f"[red] {response.error} [/red]")
+        error_display(response.error, response.msg)
 
 @user_app.command(help="Modifier un utilisateur")
 def update(ctx: typer.Context, user_id: int):
@@ -79,7 +94,7 @@ def update(ctx: typer.Context, user_id: int):
     use_case = UpdateUserUseCase(repo)
 
     if not repo.exist(user_id):
-        console.print(f"[red] Utilisateur non trouvé [/red]")
+        error_display("Ressource", "Utilisateur non trouvé")
         raise typer.Exit()
 
     policy = RequestPolicy(
@@ -88,8 +103,8 @@ def update(ctx: typer.Context, user_id: int):
         action="update",
     )
 
-    fullname: Optional[str] = typer.prompt('Nom complet: ', "")
-    email: Optional[str] = typer.prompt('Email: ', "")
+    fullname: Optional[str] = typer.prompt('Nom complet: ', "", show_default=False)
+    email: Optional[str] = typer.prompt('Email: ', "", show_default=False)
 
     fullname = normalize(fullname)
     email = normalize(email)
@@ -106,7 +121,7 @@ def update(ctx: typer.Context, user_id: int):
         console.print(f"\n[bold]Utilisateur #{response.user.id} modifié[/bold]")
         _display_data(response.user)
     else:
-        console.print(f"[red] {response.error} [/red]")
+        error_display(response.error, response.msg)
 
 @user_app.command(help="Afficher un utilisateur")
 def show(ctx: typer.Context, user_id: int):
@@ -128,7 +143,7 @@ def show(ctx: typer.Context, user_id: int):
         console.print(f"\n[bold]Utilisateur #{response.user.id}[/bold]\n")
         _display_data(response.user)
     else:
-        console.print(f"[red] {response.error} [/red]")
+        error_display(response.error, response.msg)
 
 @user_app.command(help="Afficher une liste d'utilisateur")
 def list(
@@ -155,9 +170,9 @@ def list(
     response = use_case.execute(request)
 
     if response.success:
-        _display_data_list(response.users)
+        _display_data_list(response.users, list_filter)
     else:
-        console.print(f"[red] {response.error} [/red]")
+        error_display(response.error, response.msg)
 
 @user_app.command(help="Supprimer un utilisateur")
 def delete(ctx: typer.Context, user_id: int):
@@ -172,7 +187,11 @@ def delete(ctx: typer.Context, user_id: int):
 
     #verification ressource existe
     if not repo.exist(user_id):
-        console.print(f"[red] Utilisateur non trouvé [/red]")
+        error_display("Ressource", "Utilisateur non trouvé")
+        raise typer.Exit()
+
+    if not typer.confirm(f"Etes-vous sure de vouloir supprimer l'Utilisateur #{user_id} ?"):
+        error_display("Annulation", "Suppression de l'utilisateur annulé")
         raise typer.Exit()
 
     policy = RequestPolicy(
@@ -188,9 +207,9 @@ def delete(ctx: typer.Context, user_id: int):
     response = use_case.execute(request)
 
     if response.success:
-        console.print(f"\n[bold]Utilisateur #{user_id} supprimé[/bold]")
+        console.print(f"\n[bold]Utilisateur #{user_id} supprimé[/bold]\n")
     else:
-        console.print(f"[red] {response.error} [/red]")
+        error_display(response.error, response.msg)
 
 def _display_data(user: User):
     """ Display data of User """
@@ -218,13 +237,13 @@ def _display_data(user: User):
 
     console.print(panel)
 
-def _display_data_list(users: List[User]):
+def _display_data_list(users: List[User], list_filter: UserFilter):
     """
     Display users table
     """
-
+    filtre = list_filter.name if list_filter else None
     table = Table(
-        title="[bold magenta] Liste des Utilisateurs[/bold magenta]",
+        title=f"[bold magenta] Liste des Utilisateurs - filtre: {filtre}[/bold magenta]",
         box=box.ROUNDED,
         show_header=True,
         header_style="bold cyan",

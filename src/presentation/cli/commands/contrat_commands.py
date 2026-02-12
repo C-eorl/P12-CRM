@@ -1,4 +1,3 @@
-from decimal import Decimal
 from typing import Optional, List
 
 import typer
@@ -8,36 +7,42 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+from helpers.helper_cli import error_display
 from helpers.helpers import normalize
 from src.domain.entities.entities import Contrat
 from src.domain.entities.enums import Role
 from src.domain.entities.value_objects import Money
-from src.domain.policies.user_policy import RequestPolicy
+from src.domain.policies.user_policy import RequestPolicy, UserPolicy
 from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyContratRepository, \
     SQLAlchemyClientRepository, SQLAlchemyUserRepository
 from src.use_cases.contrat_use_cases import CreateContratRequest, CreateContratUseCase, UpdateContratRequest, \
     UpdateContratUseCase, GetContratRequest, GetContratUseCase, ListContratUseCase, SignContratRequest, \
     SignContratUseCase, RecordPaymentContratRequest, RecordPaymentContratUseCase, ContratFilter, ListContratRequest, \
-    DeleteContratUseCase, DeleteContratRequest
+    DeleteContratUseCase, DeleteContratRequest, UpdateContratResponse
 
 contrat_app = typer.Typer()
 console = Console()
 
 @contrat_app.callback()
 def permission(ctx:typer.Context):
-    """Callback - for show, list commands, verify user role """
-
-    if ctx.invoked_subcommand not in ['show', "list"]:
-        pass
-    elif ctx.invoked_subcommand == "sign":
-        if ctx.obj["current_user"]["user_current_role"] not in [Role.COMMERCIAL, Role.ADMIN]:
-            console.print("[red]Vous êtes pas authorisé à utiliser cette commande[/red]")
-            raise typer.Exit(1)
-    else:
-        if ctx.obj["current_user"]["user_current_role"] not in [Role.GESTION, Role.ADMIN]:
-            console.print("[red]Vous êtes pas authorisé à utiliser cette commande[/red]")
-            raise typer.Exit(1)
+    """Callback - verify user role """
     ctx.obj["ressource"] = "CONTRAT"
+
+    action = ctx.invoked_subcommand
+    if action in ["list", "show"]:
+        return
+
+    request = RequestPolicy(
+        user=ctx.obj["current_user"],
+        ressource=ctx.obj["ressource"],
+        action=action,
+        context=None
+    )
+
+    policy = UserPolicy(request)
+    if not policy.is_allowed():
+        error_display("Permission", "Vous êtes pas authorisé à utiliser cette commande")
+        raise typer.Exit(1)
 
 @contrat_app.command(help="Créer un contrat")
 def create(
@@ -59,16 +64,16 @@ def create(
     user_repo = SQLAlchemyUserRepository(ctx.obj["session"])
 
     if not client_repo.exist(client_id):
-        console.print(f"[red] Client non trouvé [/red]")
+        error_display("Ressource", "Client non trouvé")
         raise typer.Exit(1)
 
     if not user_repo.exist(commercial_contact_id) :
-        console.print(f"[red] Utilisateur non trouvé [/red]")
+        error_display("Ressource", "Utilisateur non trouvé")
         raise typer.Exit(1)
 
     user_commercial = user_repo.find_by_id(commercial_contact_id)
     if not user_commercial.is_commercial():
-        console.print(f"[red] L'utilisateur commercial selectionné n'est pas du département commercial [/red]")
+        error_display("Ressource", "L'utilisateur selectionné n'est pas du département commercial")
         raise typer.Exit(1)
     use_case = CreateContratUseCase(repo)
 
@@ -90,7 +95,7 @@ def create(
         console.print(f"\n[bold]Contrat #{response.contrat.id} créé[/bold]\n")
         _display_data(response.contrat)
     else:
-        console.print(f"[red] {response.error} [/red]")
+        error_display(response.error, response.msg)
 
 
 @contrat_app.command(help="Modifier un contrat")
@@ -105,9 +110,14 @@ def update(ctx: typer.Context,contrat_id: int):
     use_case = UpdateContratUseCase(repo)
 
     #verification ressource existe
-    if not repo.exist(contrat_id):
-        console.print(f"[red] Contrat non trouvé [/red]")
+    contrat = repo.find_by_id(contrat_id)
+    if not contrat:
+        error_display("Ressource", "Contrat non trouvé")
         raise typer.Exit()
+
+    if contrat.has_sign():
+            error_display("Erreur Métier", "Aucune modification permise sur un contrat signé")
+            raise typer.Exit()
 
     policy = RequestPolicy(
         user=ctx.obj["current_user"],
@@ -115,13 +125,13 @@ def update(ctx: typer.Context,contrat_id: int):
         action="update"
     )
 
-    contrat_amount = typer.prompt("Montant du contrat", default=0)
+    contrat_amount = typer.prompt("Montant du contrat", default=0, show_default=False)
 
     contrat_amount = normalize(contrat_amount)
 
     request = UpdateContratRequest(
         contrat_id=contrat_id,
-        contrat_amount = contrat_amount ,
+        contrat_amount = Money(contrat_amount),
         authorization=policy
     )
     response = use_case.execute(request)
@@ -130,7 +140,7 @@ def update(ctx: typer.Context,contrat_id: int):
         console.print(f"\n[bold]Contrat #{response.contrat.id} modifié[/bold]\n")
         _display_data(response.contrat)
     else:
-        console.print(f"[red] {response.error} [/red]")
+        error_display(response.error, response.msg)
 
 
 @contrat_app.command(help="Afficher un contrat")
@@ -145,7 +155,7 @@ def show(ctx: typer.Context, contrat_id: int):
     use_case = GetContratUseCase(repo)
 
     if not repo.exist(contrat_id):
-        console.print(f"[red] Contrat non trouvé [/red]")
+        error_display("Ressource", "Contrat non trouvé")
         raise typer.Exit()
 
     request = GetContratRequest(
@@ -156,7 +166,7 @@ def show(ctx: typer.Context, contrat_id: int):
     if response.success:
         _display_data(response.contrat)
     else:
-        console.print(f"[red] {response.error} [/red]")
+        error_display(response.error, response.msg)
 
 @contrat_app.command(help="Afficher tous les contrats")
 def list(
@@ -181,9 +191,9 @@ def list(
     response = use_case.execute(request)
 
     if response.success:
-            _display_data_list(response.contrats)
+            _display_data_list(response.contrats, list_filter)
     else:
-        console.print(f"[red] {response.error} [/red]")
+        error_display(response.error, response.msg)
 
 @contrat_app.command(help="Signer un contrat")
 def sign(ctx: typer.Context ,contrat_id: int):
@@ -197,7 +207,7 @@ def sign(ctx: typer.Context ,contrat_id: int):
     use_case = SignContratUseCase(repo)
 
     if not repo.exist(contrat_id):
-        console.print(f"[red] Contrat non trouvé [/red]")
+        error_display("Ressource", "Contrat non trouvé")
         raise typer.Exit()
 
     policy = RequestPolicy(
@@ -215,7 +225,7 @@ def sign(ctx: typer.Context ,contrat_id: int):
     if response.success:
         console.print(f"Contrat #{response.contrat.id} - statut: {response.contrat.status.name} ")
     else:
-        console.print(f"[red] {response.error} [/red]")
+        error_display(response.error, response.msg)
 
 @contrat_app.command(help="Effectuer un paiement")
 def pay(ctx : typer.Context, contrat_id: int):
@@ -228,8 +238,13 @@ def pay(ctx : typer.Context, contrat_id: int):
     repo = SQLAlchemyContratRepository(ctx.obj["session"])
     use_case = RecordPaymentContratUseCase(repo)
 
-    if not repo.exist(contrat_id):
-        console.print(f"[red] Contrat non trouvé [/red]")
+    contrat = repo.find_by_id(contrat_id)
+    if not contrat:
+        error_display("Ressource", "Contrat non trouvé")
+        raise typer.Exit()
+
+    if contrat.has_sign():
+        error_display("Erreur Métier", "La signature du contrat est nécessaire")
         raise typer.Exit()
 
     policy = RequestPolicy(
@@ -253,7 +268,7 @@ def pay(ctx : typer.Context, contrat_id: int):
         console.print(f"Montant restant: {response.contrat.balance_due.amount}")
         console.print(f"Montant total: {response.contrat.contrat_amount.amount}")
     else:
-        console.print(f"[red] {response.error} [/red]")
+        error_display(response.error, response.msg)
 
 @contrat_app.command(help="Supprimer un contrat")
 def delete(ctx: typer.Context, contrat_id: int):
@@ -268,7 +283,11 @@ def delete(ctx: typer.Context, contrat_id: int):
 
     #verification ressource existe
     if not repo.exist(contrat_id):
-        console.print(f"[red] Contrat non trouvé [/red]")
+        error_display("Ressource", "Contrat non trouvé")
+        raise typer.Exit()
+
+    if not typer.confirm(f"Etes-vous sure de vouloir supprimer le Contrat #{contrat_id} ?"):
+        error_display("Annulation", "Suppression du contrat annulé")
         raise typer.Exit()
 
     policy = RequestPolicy(
@@ -286,7 +305,7 @@ def delete(ctx: typer.Context, contrat_id: int):
     if response.success:
         console.print(f"\n[bold]Contrat #{contrat_id} supprimé[/bold]")
     else:
-        console.print(f"[red] {response.error} [/red]")
+        error_display(response.error, response.msg)
 
 def _display_data(contrat: Contrat):
     """ Display data of Contrat """
@@ -321,13 +340,13 @@ def _display_data(contrat: Contrat):
 
     console.print(panel)
 
-def _display_data_list(contrats: List[Contrat]):
+def _display_data_list(contrats: List[Contrat], list_filter: ContratFilter):
     """
     Display contrats table
     """
-
+    filtre = list_filter.name if list_filter else None
     table = Table(
-        title="[bold magenta] Liste des Contrats[/bold magenta]",
+        title=f"[bold magenta] Liste des Contrats - filtre: {filtre}[/bold magenta]",
         box=box.ROUNDED,
         show_header=True,
         header_style="bold cyan",

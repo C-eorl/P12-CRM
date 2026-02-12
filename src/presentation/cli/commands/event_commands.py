@@ -8,11 +8,13 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+from helpers.helper_cli import error_display
 from helpers.helpers import normalize
 from src.domain.entities.entities import Event
 from src.domain.entities.enums import Role
-from src.domain.policies.user_policy import RequestPolicy
-from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyEventRepository, SQLAlchemyUserRepository
+from src.domain.policies.user_policy import RequestPolicy, UserPolicy
+from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyEventRepository, SQLAlchemyUserRepository, \
+    SQLAlchemyContratRepository, SQLAlchemyClientRepository
 from src.use_cases.event_use_cases import ListEventUseCase, GetEventUseCase, GetEventRequest, UpdateEventUseCase, \
     UpdateEventRequest, CreateEventUseCase, CreateEventRequest, AssignSupportEventRequest, AssignSupportEventUseCase, \
     EventFilter, ListEventRequest, DeleteEventRequest, DeleteEventUseCase
@@ -22,29 +24,30 @@ console = Console()
 
 @event_app.callback()
 def permission(ctx:typer.Context):
-    if ctx.invoked_subcommand not in ['show', "list"]:
-        if ctx.invoked_subcommand == "assign":
-            if ctx.obj["current_user"]["user_current_role"] not in [Role.GESTION, Role.ADMIN]:
-                console.print("[red]Vous êtes pas authorisé à utiliser cette commande[/red]")
-                raise typer.Exit()
-
-        if ctx.invoked_subcommand == "create":
-            if ctx.obj["current_user"]["user_current_role"] not in [Role.COMMERCIAL, Role.ADMIN]:
-                console.print("[red]Vous êtes pas authorisé à utiliser cette commande[/red]")
-                raise typer.Exit()
-
-        if ctx.invoked_subcommand == "update":
-            if ctx.obj["current_user"]["user_current_role"] not in [Role.SUPPORT, Role.ADMIN]:
-                console.print("[red]Vous êtes pas authorisé à utiliser cette commande[/red]")
-                raise typer.Exit()
+    """Callback - verify user role """
     ctx.obj["ressource"] = "EVENT"
+    action = ctx.invoked_subcommand
+    if action in ["list", "show"]:
+        return
+
+    request = RequestPolicy(
+        user=ctx.obj["current_user"],
+        ressource=ctx.obj["ressource"],
+        action=action,
+        context=None
+    )
+
+    policy = UserPolicy(request)
+    if not policy.is_allowed():
+        error_display("Permission", "Vous êtes pas authorisé à utiliser cette commande")
+        raise typer.Exit(1)
+
 
 @event_app.command(help="Créer un évènement")
 def create(
         ctx: typer.Context,
         name: str = typer.Option(None, prompt=True),
         contrat_id: int = typer.Option(None, prompt=True),
-        client_id: int = typer.Option(None, prompt=True),
         start_date: datetime = typer.Option(..., prompt=True),
         end_date: datetime = typer.Option(..., prompt=True),
         location: str = typer.Option(..., prompt=True),
@@ -56,7 +59,6 @@ def create(
     :param ctx: typer.Context
     :param name: name of the event
     :param contrat_id: ID contrat linked to the event
-    :param client_id: ID client linked to the event
     :param start_date: start date of the event
     :param end_date: end date of the event
     :param location: location of the event
@@ -73,7 +75,6 @@ def create(
     request = CreateEventRequest(
         name= name,
         contrat_id = contrat_id,
-        client_id = client_id,
         start_date=start_date,
         end_date=end_date,
         location=location,
@@ -81,15 +82,17 @@ def create(
         notes=notes,
         authorization=policy
     )
-    repo = SQLAlchemyEventRepository(ctx.obj["session"])
-    use_case = CreateEventUseCase(repo)
+    event_repo = SQLAlchemyEventRepository(ctx.obj["session"])
+    contrat_repo = SQLAlchemyContratRepository(ctx.obj["session"])
+    client_repo = SQLAlchemyClientRepository(ctx.obj["session"])
+    use_case = CreateEventUseCase(event_repo, contrat_repo, client_repo)
     response = use_case.execute(request)
 
     if response.success:
         console.print(f"\n[bold]Evènement #{response.event.id} créé[/bold]\n")
         _display_data(response.event)
     else:
-        console.print(f"[red] {response.error} [/red]")
+        error_display(response.error, response.msg)
 
 
 @event_app.command(help="Modifier un évènement")
@@ -103,8 +106,13 @@ def update(ctx: typer.Context, event_id: int):
     repo = SQLAlchemyEventRepository(ctx.obj["session"])
     use_case = UpdateEventUseCase(repo)
 
-    if not repo.exist(event_id):
-        console.print(f"[red] Client non trouvé [/red]")
+    event = repo.find_by_id(event_id)
+    if not event:
+        error_display("Permission", "Evènement non trouvé")
+        raise typer.Exit()
+
+    if event.support_contact_id != ctx.obj["current_user"]["user_current_role"]:
+        error_display("Permission", "Seuls les membres support associé à l'évènement peuvent le modifier")
         raise typer.Exit()
 
     policy = RequestPolicy(
@@ -113,12 +121,12 @@ def update(ctx: typer.Context, event_id: int):
         action="update"
     )
 
-    name = typer.prompt("Nom de l'évènement: ", "")
-    start_date= typer.prompt('Date et heure de début (2000-00-00 00:00:00): ', "")
-    end_date = typer.prompt('Date et heure de fin (2000-00-00 00:00:00): ', "")
-    location = typer.prompt('Emplacement: ', "")
-    attendees = typer.prompt("Nombre de participant: ", "")
-    notes = typer.prompt("Notes: ", "")
+    name = typer.prompt("Nom de l'évènement: ", "", show_default=False)
+    start_date= typer.prompt('Date et heure de début (2000-00-00 00:00:00): ', "", show_default=False)
+    end_date = typer.prompt('Date et heure de fin (2000-00-00 00:00:00): ', "", show_default=False)
+    location = typer.prompt('Emplacement: ', "", show_default=False)
+    attendees = typer.prompt("Nombre de participant: ", "", show_default=False)
+    notes = typer.prompt("Notes: ", "", show_default=False)
 
     name = normalize(name)
     location = normalize(location)
@@ -141,7 +149,7 @@ def update(ctx: typer.Context, event_id: int):
         console.print(f"\n[bold]Evènement #{response.event.id} modifié[/bold]\n")
         _display_data(response.event)
     else:
-        console.print(f"[red] {response.error} [/red]")
+        error_display(response.error, response.msg)
 
 
 @event_app.command(help="Afficher un évènement")
@@ -163,7 +171,7 @@ def show(ctx : typer.Context, event_id: int):
     if response.success:
         _display_data(response.event)
     else:
-        console.print(f"[red] {response.error} [/red]")
+        error_display(response.error, response.msg)
 
 @event_app.command(help="Afficher tous les évènement")
 def list(
@@ -188,9 +196,9 @@ def list(
     response = use_case.execute(request)
 
     if response.success:
-        _display_data_list(response.events)
+        _display_data_list(response.events, list_filter)
     else:
-        console.print(f"[red] {response.error} [/red]")
+        error_display(response.error, response.msg)
 
 
 @event_app.command(help="Assigner un Utilisateur Support a l'évènement")
@@ -206,7 +214,7 @@ def assign(ctx: typer.Context, event_id: int):
     user_repo = SQLAlchemyUserRepository(session)
 
     if not repo.exist(event_id):
-        console.print(f"[red] Client non trouvé [/red]")
+        error_display("Ressource", "Client non trouvé")
         raise typer.Exit()
 
     policy = RequestPolicy(
@@ -226,9 +234,9 @@ def assign(ctx: typer.Context, event_id: int):
     response = use_case.execute(request)
 
     if response.success:
-        console.print(f"\n[bold]Évènement #{event_id} - assigné à User #: {support_user_id}[bold]")
+        console.print(f"\n[bold]Évènement #{event_id} - assigné à User #: {support_user_id}[bold]\n")
     else:
-        console.print(f"[red] {response.error} [/red]")
+        error_display(response.error, response.msg)
 
 @event_app.command(help="Supprimer un évènement")
 def delete(ctx: typer.Context, event_id: int):
@@ -243,7 +251,11 @@ def delete(ctx: typer.Context, event_id: int):
 
     #verification ressource existe
     if not repo.exist(event_id):
-        console.print(f"[red] Evènement non trouvé [/red]")
+        error_display("Ressource", "Evènement non trouvé")
+        raise typer.Exit()
+
+    if not typer.confirm(f"Etes-vous sure de vouloir supprimer l'Evènement #{event_id} ?"):
+        error_display("Annulation", "Suppression de l'évènement annulé")
         raise typer.Exit()
 
     policy = RequestPolicy(
@@ -261,7 +273,7 @@ def delete(ctx: typer.Context, event_id: int):
     if response.success:
         console.print(f"\n[bold]Evènement #{event_id} supprimé[/bold]")
     else:
-        console.print(f"[red] {response.error} [/red]")
+        error_display(response.error, response.msg)
 
 
 def _display_data(event: Event):
@@ -279,7 +291,7 @@ def _display_data(event: Event):
     content.append(f"#{event.client_id}\n")
 
     content.append(f"Contact Support: ", style="bold cyan")
-    support_text = f"#{event.support_contact_id}" if event.support_contact_id else "[dim]Non assigné[/dim]"
+    support_text = f"#{event.support_contact_id}" if event.support_contact_id else "Non assigné"
     content.append(support_text + "\n")
 
     content.append(f"\nDébut: ", style="bold cyan")
@@ -309,16 +321,13 @@ def _display_data(event: Event):
 
     console.print(panel)
 
-def _display_data_list(events: List[Event]):
+def _display_data_list(events: List[Event], list_filter: EventFilter):
     """
     Display events table
     """
-    if not events:
-        console.print("[yellow]Aucun événement à afficher[/yellow]")
-        return
-
+    filtre = list_filter.name if list_filter else None
     table = Table(
-        title="[bold magenta] Liste des Événements[/bold magenta]",
+        title=f"[bold magenta] Liste des Événements - filtre: {filtre}[/bold magenta]",
         box=box.ROUNDED,
         show_header=True,
         header_style="bold cyan",

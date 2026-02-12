@@ -7,11 +7,11 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+from helpers.helper_cli import error_display
 from helpers.helpers import normalize
 
 from src.domain.entities.entities import  Client
-from src.domain.entities.enums import Role
-from src.domain.policies.user_policy import RequestPolicy
+from src.domain.policies.user_policy import RequestPolicy, UserPolicy
 from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyClientRepository
 from src.use_cases.client_use_cases import GetClientUseCase, GetClientRequest, CreateClientRequest, CreateClientUseCase, \
     ListClientUseCase, UpdateClientRequest, UpdateClientUseCase, DeleteClientUseCase, DeleteClientRequest, \
@@ -22,12 +22,24 @@ console = Console()
 
 @client_app.callback()
 def permission(ctx:typer.Context):
-    """Callback - for show, list commands, verify user role """
-    if ctx.invoked_subcommand not in ['show', "list"]:
-        if ctx.obj["current_user"]["user_current_role"] not in  [Role.COMMERCIAL, Role.ADMIN]:
-            console.print("[red]Vous êtes pas authorisé à utiliser cette commande[/red]")
-            raise typer.Exit(1)
+    """Callback - verify user role """
     ctx.obj["ressource"] = "CLIENT"
+
+    action = ctx.invoked_subcommand
+    if action in ["list", "show"]:
+        return
+
+    request = RequestPolicy(
+        user=ctx.obj["current_user"],
+        ressource=ctx.obj["ressource"],
+        action=action,
+        context=None
+    )
+
+    policy = UserPolicy(request)
+    if not policy.is_allowed():
+        error_display("Permission", "Vous êtes pas authorisé à utiliser cette commande")
+        raise typer.Exit(1)
 
 @client_app.command()
 def create(
@@ -72,7 +84,7 @@ def create(
         console.print(f"\n[bold]Client #{response.client.id} créé[/bold]\n")
         _display_data(response.client)
     else:
-        console.print(f"[red] Erreur: {response.error} [/red]")
+        error_display(response.error, response.msg)
 
 @client_app.command()
 def update(ctx: typer.Context, client_id: int):
@@ -87,9 +99,15 @@ def update(ctx: typer.Context, client_id: int):
     use_case = UpdateClientUseCase(repo)
 
     #verification ressource existe
-    if not repo.exist(client_id):
-        console.print(f"[red] Client non trouvé [/red]")
-        raise typer.Exit()
+    client = repo.find_by_id(client_id)
+    if not client:
+        error_display("Ressource","Client non trouvé")
+        raise typer.Exit(1)
+
+    if client.commercial_contact_id != ctx.obj["current_user"]["user_current_id"]:
+        error_display("Permission", "Seuls les membres commerciaux associé au client peuvent le modifier")
+        raise typer.Exit(1)
+
     # requete autorisation
     policy = RequestPolicy(
         user=ctx.obj["current_user"],
@@ -122,7 +140,7 @@ def update(ctx: typer.Context, client_id: int):
         console.print(f"\n[bold]Client #{response.client.id} modifié[/bold]\n")
         _display_data(response.client)
     else:
-        console.print(f"[red] {response.error} [/red]")
+        error_display(response.error, response.msg)
 
 
 @client_app.command()
@@ -138,7 +156,7 @@ def show(ctx: typer.Context, client_id: int):
 
     # verification ressource existante
     if not repo.exist(client_id):
-        console.print(f"[red] Client non trouvé [/red]")
+        error_display("Ressource", "Client non trouvé")
         raise typer.Exit()
 
     request = GetClientRequest(
@@ -149,7 +167,7 @@ def show(ctx: typer.Context, client_id: int):
     if response.success:
         _display_data(response.client)
     else:
-        console.print(f"[red] {response.error} [/red]")
+        error_display(response.error, response.msg)
 
 @client_app.command()
 def list(
@@ -175,12 +193,12 @@ def list(
     response = use_case.execute(request)
 
     if response.success:
-        _display_data_list(response.clients)
+        _display_data_list(response.clients, list_filter)
     else:
-        console.print(f"[red] {response.error} [/red]")
+        error_display(response.error, response.msg)
 
 @client_app.command()
-def delete(ctx: typer.Context, client_id: int):
+def delete(ctx: typer.Context, client_id: int, ):
     """
     Command for delete client
     :param ctx: typer Context
@@ -192,7 +210,11 @@ def delete(ctx: typer.Context, client_id: int):
 
     #verification ressource existe
     if not repo.exist(client_id):
-        console.print(f"[red] Client non trouvé [/red]")
+        error_display("Permission","Client non trouvé")
+        raise typer.Exit()
+
+    if not typer.confirm(f"Etes-vous sure de vouloir supprimer le Client #{client_id} ?"):
+        error_display("Annulation", "Suppression du client annulé")
         raise typer.Exit()
 
     policy = RequestPolicy(
@@ -210,7 +232,7 @@ def delete(ctx: typer.Context, client_id: int):
     if response.success:
         console.print(f"\n[bold]Client #{client_id} supprimé[/bold]")
     else:
-        console.print(f"[red] {response.error} [/red]")
+        error_display(response.error, response.msg)
 
 def _display_data(client: Client):
     """ Display data of Client """
@@ -242,13 +264,13 @@ def _display_data(client: Client):
 
     console.print(panel)
 
-def _display_data_list(clients: List[Client]):
+def _display_data_list(clients: List[Client], filtre: ClientFilter):
     """
     Display clients table
     """
-
+    filtre = filtre.name if filtre else None
     table = Table(
-        title="[bold magenta] Liste des Clients[/bold magenta]",
+        title=f"[bold magenta] Liste des Clients - filtre: {filtre}[/bold magenta]",
         box=box.ROUNDED,
         show_header=True,
         header_style="bold cyan",
