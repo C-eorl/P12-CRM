@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Optional, List
 
 from src.domain.entities.entities import Event
-from src.domain.interfaces.repository import EventRepository, UserRepository
+from src.domain.interfaces.repository import EventRepository, UserRepository, ContratRepository, ClientRepository
 from src.domain.policies.user_policy import UserPolicy, RequestPolicy
 
 
@@ -13,7 +13,6 @@ from src.domain.policies.user_policy import UserPolicy, RequestPolicy
 class CreateEventRequest:
     name: str
     contrat_id: int
-    client_id: int
     start_date: datetime
     end_date: datetime
     location: str
@@ -27,13 +26,20 @@ class CreateEventResponse:
     success: bool
     event: Optional[Event] = None
     error: Optional[str] = None
+    msg: Optional[str] = None
 
 
 class CreateEventUseCase:
     """Use case for creating a new contrat"""
 
-    def __init__(self, event_repository: EventRepository):
-        self.repository = event_repository
+    def __init__(
+            self, event_repository: EventRepository,
+            contrat_repository: ContratRepository,
+            client_repository: ClientRepository
+    ):
+        self.event_repository = event_repository
+        self.contrat_repository = contrat_repository
+        self.client_repository = client_repository
 
     def execute(self, request: CreateEventRequest) -> CreateEventResponse:
 
@@ -41,32 +47,59 @@ class CreateEventUseCase:
         if not policy.is_allowed():
             return CreateEventResponse(
                 success=False,
-                error="Seuls les membres support peuvent créer des évènements"
+                error="Permission",
+                msg="Seuls les membres commerciaux peuvent créer des évènements"
+            )
+        # validation contrat existe
+        if not self.contrat_repository.exist(request.contrat_id):
+            return CreateEventResponse(
+                success=False,
+                error="Ressource",
+                msg=f"le Contrat #{request.contrat_id} n'existe pas"
             )
 
-        #Validation
+        contrat = self.contrat_repository.find_by_id(request.contrat_id)
+        # Validation si contrat associé commercial
+        if contrat.commercial_contact_id != request.authorization.user["user_current_id"]:
+            return CreateEventResponse(
+                success=False,
+                error="Permission",
+                msg=f"le Contrat #{request.contrat_id} n'est pas associé à vous"
+            )
+
+        if not contrat.has_sign():
+            return CreateEventResponse(
+                success=False,
+                error="Erreur Métier",
+                msg=f"Contrat {request.contrat_id} n'est pas signé"
+            )
+        # Validation valeur
         if request.start_date < datetime.now():
             return CreateEventResponse(
                 success=False,
-                error="La date de début est déjà passé"
+                error="Erreur Métier",
+                msg="La date de début est déjà passé"
             )
         if request.end_date <= request.start_date:
             return CreateEventResponse(
                 success=False,
-                error="La date de fin doit être après la date de début"
+                error="Erreur Métier",
+                msg="La date de fin doit être après la date de début"
             )
-
         if request.attendees <= 0:
             return CreateEventResponse(
                 success=False,
-                error="Le nombre de participants doit être positif"
+                error="Erreur Métier",
+                msg="Le nombre de participants doit être positif"
             )
+
+        client_id = contrat.client_id
 
         event = Event(
             id=  None,
             name =  request.name,
             contrat_id = request.contrat_id,
-            client_id = request.client_id,
+            client_id = client_id,
             support_contact_id = None,
             start_date = request.start_date,
             end_date = request.end_date,
@@ -75,7 +108,7 @@ class CreateEventUseCase:
             notes = request.notes,
             )
 
-        saved_event = self.repository.save(event)
+        saved_event = self.event_repository.save(event)
         return CreateEventResponse(success=True, event=saved_event)
 
 ##############################################################################
@@ -83,8 +116,6 @@ class CreateEventUseCase:
 class UpdateEventRequest:
     event_id: int
     name: Optional[str]
-    # contrat id
-    # client id
     start_date: Optional[datetime]
     end_date: Optional[datetime]
     location: Optional[str]
@@ -98,6 +129,7 @@ class UpdateEventResponse:
     success: bool
     event: Optional[Event] = None
     error: Optional[str] = None
+    msg: Optional[str] = None
 
 
 class UpdateEventUseCase:
@@ -112,7 +144,8 @@ class UpdateEventUseCase:
         if not event:
             return UpdateEventResponse(
                 success=False,
-                error="Événement non trouvé"
+                error="Ressource",
+                msg="Événement non trouvé"
             )
 
         policy = UserPolicy(request.authorization)
@@ -120,7 +153,8 @@ class UpdateEventUseCase:
         if not policy.is_allowed():
             return UpdateEventResponse(
                 success=False,
-                error="Seuls les membres support peuvent créer des évènements"
+                error="Permission",
+                msg="Seuls les membres support peuvent créer des évènements"
             )
 
         event.update_info(
@@ -151,7 +185,7 @@ class ListEventResponse:
     success: bool
     events: List[Event] = None
     error: Optional[str] = None
-
+    msg: Optional[str] = None
 
 class ListEventUseCase:
     """Use case for listing contrats"""
@@ -168,6 +202,13 @@ class ListEventUseCase:
                 criteres["support_contact"] = False
 
         events = self.repository.find_all(criteres)
+        if not events:
+            return ListEventResponse(
+                success=False,
+                error="Ressource",
+                msg="Aucun évènement trouvé"
+            )
+
         return ListEventResponse(success=True, events=events)
 
 ##############################################################################
@@ -181,6 +222,7 @@ class GetEventResponse:
     success: bool
     event: Optional[Event] = None
     error: Optional[str] = None
+    msg: Optional[str] = None
 
 
 class GetEventUseCase:
@@ -195,7 +237,8 @@ class GetEventUseCase:
         if not event:
             return GetEventResponse(
                 success=False,
-                error="Evenement non trouvé"
+                error="Ressource",
+                msg="Evenement non trouvé"
             )
 
         return GetEventResponse(success=True, event=event)
@@ -211,6 +254,7 @@ class DeleteEventRequest:
 class DeleteEventResponse:
     success: bool
     error: Optional[str] = None
+    msg: Optional[str] = None
 
 
 class DeleteEventUseCase:
@@ -225,14 +269,16 @@ class DeleteEventUseCase:
         if not event:
             return DeleteEventResponse(
                 success=False,
-                error="Evenement non trouvé"
+                error="Ressource",
+                msg="Evenement non trouvé"
             )
 
         policy = UserPolicy(request.authorization)
         if not policy.is_allowed():
             return DeleteEventResponse(
                 success=False,
-                error="Seuls les membres administrateur peuvent créer des évènements"
+                error="Permission",
+                msg="Seuls les membres administrateur peuvent supprimer des évènements"
             )
 
         self.repository.delete(event.id)
@@ -250,6 +296,7 @@ class AssignSupportEventRequest:
 class AssignSupportEventResponse:
     success: bool
     error: Optional[str] = None
+    msg: Optional[str] = None
 
 class AssignSupportEventUseCase:
     """Use case for assigning support events"""
@@ -263,34 +310,40 @@ class AssignSupportEventUseCase:
         if not policy.is_allowed():
             return AssignSupportEventResponse(
                 success=False,
-                error="Seuls les membres support peuvent créer des évènements"
+                error="Permission",
+                msg="Seuls les membres support peuvent créer des évènements"
             )
 
         event = self.repository.find_by_id(request.event_id)
         if not event:
             return AssignSupportEventResponse(
                 success=False,
-                error="Evenement non trouvé"
+                error="Ressource",
+                msg="Evenement non trouvé"
             )
 
         if event.has_support_contact():
             return AssignSupportEventResponse(
                 success=False,
-                error="L'évènement a déjà un contact support"
+                error="Erreur Métier",
+                msg="L'évènement a déjà un contact support"
             )
 
         user = self.user_repository.find_by_id(request.support_user_id)
         if not user:
             return AssignSupportEventResponse(
                 success=False,
-                error="Utilisateur support non trouvé"
+                error="Ressource",
+                msg="Utilisateur non trouvé"
             )
         try:
             event.assign_support(user)
         except PermissionError as e:
             return AssignSupportEventResponse(
                 success=False,
-                error=str(e)
+                error="Permission",
+                msg=str(e)
             )
 
+        self.repository.save(event)
         return AssignSupportEventResponse(success=True)

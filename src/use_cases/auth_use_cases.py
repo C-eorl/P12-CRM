@@ -15,6 +15,7 @@ class AuthenticateRequest:
 class AuthenticateResponse:
     success: bool
     error: Optional[str] = None
+    msg: Optional[str] = None
 
 class AuthenticateUseCase:
     def __init__(self,
@@ -32,18 +33,20 @@ class AuthenticateUseCase:
         if not user:
             return AuthenticateResponse(
                 success=False,
-                error="Aucun compte lié a cette email"
+                error="Erreur Authentification",
+                msg="Aucun compte lié à cette adresse email"
             )
 
         if not self.password_hasher.verify_password(request.password, user.password):
             return AuthenticateResponse(
                 success=False,
-                error="Email ou mot de passe incorrect"
+                error="Erreur Authentification",
+                msg="Mot de passe incorrect"
             )
 
         token = self.token_manager.create_token(user.id)
         TokenStore.save_token(token)
 
         return AuthenticateResponse(
-            success=True,
+            success=True
         )

@@ -1,9 +1,8 @@
-##############################################################################
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, List
 
-from src.domain.entities.entities import User, Contrat
+from src.domain.entities.entities import Contrat
 from src.domain.entities.enums import ContractStatus
 from src.domain.entities.exceptions import BusinessRuleViolation
 from src.domain.entities.value_objects import Money
@@ -24,6 +23,7 @@ class CreateContratResponse:
     success: bool
     contrat: Optional[Contrat] = None
     error: Optional[str] = None
+    msg: Optional[str] = None
 
 
 class CreateContratUseCase:
@@ -38,13 +38,15 @@ class CreateContratUseCase:
         if not policy.is_allowed():
             return CreateContratResponse(
                 success=False,
-                error="Seuls les membres gestion peuvent créer des contrats"
+                error="Permission",
+                msg="Seuls les membres gestion peuvent créer des contrats"
             )
 
         if request.contrat_amount <= Money(0):
             return CreateContratResponse(
                 success=False,
-                error="Le contrat doit avoir un montant supèrieur à 0"
+                error="Erreur Métier",
+                msg="Le contrat doit avoir un montant supèrieur à 0"
             )
 
         contrat = Contrat(
@@ -72,11 +74,10 @@ class UpdateContratResponse:
     success: bool
     contrat: Optional[Contrat] = None
     error: Optional[str] = None
-
+    msg: Optional[str] = None
 
 class UpdateContratUseCase:
     """Use case for updating a contrat"""
-    # TODO A vérifier si utile
 
     def __init__(self, contrat_repository: ContratRepository):
         self.repository = contrat_repository
@@ -87,7 +88,15 @@ class UpdateContratUseCase:
         if not contrat:
             return UpdateContratResponse(
                 success=False,
-                error="Contrat non trouvé"
+                error="Ressource",
+                msg="Contrat non trouvé"
+            )
+
+        if contrat.has_sign():
+            return UpdateContratResponse(
+                success=False,
+                error="Erreur Métier",
+                msg="Aucune modification autorisée après signature"
             )
 
         policy = UserPolicy(request.authorization)
@@ -95,12 +104,12 @@ class UpdateContratUseCase:
         if not policy.is_allowed():
             return UpdateContratResponse(
                 success=False,
-                error="Seuls les membres gestion peuvent modifier des contrats"
+                error="Permission",
+                msg="Seuls les membres gestion peuvent modifier des contrats"
             )
-
-        if request.contrat_amount is not None:
-            contrat.contrat_amount = Money(request.contrat_amount)
-
+        contrat.update_info(
+            amount=request.contrat_amount,
+        )
 
         updated_contrat = self.repository.save(contrat)
         return UpdateContratResponse(success=True, contrat=updated_contrat)
@@ -123,6 +132,7 @@ class ListContratResponse:
     success: bool
     contrats: List[Contrat] = None
     error: Optional[str] = None
+    msg: Optional[str] = None
 
 
 class ListContratUseCase:
@@ -146,6 +156,13 @@ class ListContratUseCase:
                 criteres["fully_paid"] = False
 
         contrats = self.repository.find_all(criteres)
+        if not contrats:
+            return ListContratResponse(
+                success=False,
+                error="Ressource",
+                msg="Aucun contrat trouvé"
+            )
+
         return ListContratResponse(success=True, contrats=contrats)
 
 ##############################################################################
@@ -159,6 +176,7 @@ class GetContratResponse:
     success: bool
     contrat: Optional[Contrat] = None
     error: Optional[str] = None
+    msg: Optional[str] = None
 
 
 class GetContratUseCase:
@@ -173,7 +191,8 @@ class GetContratUseCase:
         if not contrat:
             return GetContratResponse(
                 success=False,
-                error="Contrat non trouvé"
+                error="Ressource",
+                msg="Contrat non trouvé"
             )
 
         return GetContratResponse(success=True, contrat=contrat)
@@ -189,6 +208,7 @@ class DeleteContratRequest:
 class DeleteContratResponse:
     success: bool
     error: Optional[str] = None
+    msg: Optional[str] = None
 
 
 class DeleteContratUseCase:
@@ -203,14 +223,16 @@ class DeleteContratUseCase:
         if not policy.is_allowed():
             return DeleteContratResponse(
                 success=False,
-                error="Seuls les membres administrateur peuvent supprimer des contrats"
+                error="Permission",
+                msg="Seuls les membres administrateur peuvent supprimer des contrats"
             )
 
         contrat = self.repository.find_by_id(request.contrat_id)
         if not contrat:
             return DeleteContratResponse(
                 success=False,
-                error="Contrat non trouvé"
+                error="Ressource",
+                msg="Contrat non trouvé"
             )
 
         self.repository.delete(contrat.id)
@@ -229,7 +251,7 @@ class SignContratResponse:
     success: bool
     contrat: Optional[Contrat] = None
     error: Optional[str] = None
-
+    msg: Optional[str] = None
 
 class SignContratUseCase:
     """Use case for sign a contrat"""
@@ -243,7 +265,8 @@ class SignContratUseCase:
         if not contrat:
             return SignContratResponse(
                 success=False,
-                error="Contrat non trouvé"
+                error="Ressource",
+                msg="Contrat non trouvé"
             )
 
         policy = UserPolicy(request.authorization)
@@ -251,13 +274,18 @@ class SignContratUseCase:
         if not policy.is_allowed():
             return SignContratResponse(
                 success=False,
-                error="Seuls les membres commercials peuvent signer des contrats"
+                error="Permission",
+                msg="Seuls les membres commercials peuvent signer des contrats"
             )
 
         try:
             contrat.sign()
         except BusinessRuleViolation as e:
-            return SignContratResponse(success=False, error=str(e))
+            return SignContratResponse(
+                success=False,
+                error="Erreur Métier",
+                msg=str(e)
+            )
 
         self.repository.save(contrat)
         return SignContratResponse(success=True, contrat=contrat)
@@ -275,6 +303,7 @@ class RecordPaymentContratResponse:
     success: bool
     contrat: Optional[Contrat] = None
     error: Optional[str] = None
+    msg: Optional[str] = None
 
 
 class RecordPaymentContratUseCase:
@@ -289,7 +318,8 @@ class RecordPaymentContratUseCase:
         if not contrat:
             return RecordPaymentContratResponse(
                 success=False,
-                error="Contrat non trouvé"
+                error="Ressource",
+                msg="Contrat non trouvé"
             )
 
         request.authorization.context = contrat
@@ -298,20 +328,26 @@ class RecordPaymentContratUseCase:
         if not policy.is_allowed():
             return RecordPaymentContratResponse(
                 success=False,
-                error="Seuls les membres "" peuvent supprimer des contrats"
+                error="Permission",
+                msg="Seuls les membres commerciaux peuvent effectuer des paiements"
             )
 
         if contrat.is_fully_paid():
             return RecordPaymentContratResponse(
                 success=False,
-                error="Le contrat a été entièrement réglé"
+                error="Erreur Métier",
+                msg="Le contrat a été entièrement réglé"
             )
 
         try:
             payment = Money(request.payment)
             contrat.record_payment(payment)
         except BusinessRuleViolation as e:
-            return RecordPaymentContratResponse(success=False, error=str(e))
+            return RecordPaymentContratResponse(
+                success=False,
+                error="Erreur Métier",
+                msg=str(e)
+            )
 
         self.repository.save(contrat)
         return RecordPaymentContratResponse(success=True, contrat=contrat)

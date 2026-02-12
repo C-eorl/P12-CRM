@@ -28,6 +28,7 @@ class CreateClientResponse:
     success: bool
     client: Optional[Client] = None
     error: Optional[str] = None
+    msg: Optional[str] = None
 
 
 class CreateClientUseCase:
@@ -43,14 +44,19 @@ class CreateClientUseCase:
         if not policy.is_allowed():
             return CreateClientResponse(
                 success=False,
-                error="Seuls les membres commerciaux peuvent créer des clients"
+                error="Permission",
+                msg="Seuls les membres commerciaux peuvent créer des clients"
             )
 
         try:
             email = Email(request.email)
             telephone = Telephone(request.telephone)
         except (ValidationError, InvalidEmailError, InvalidPhoneError) as e:
-            return CreateClientResponse(success=False, error=str(e))
+            return CreateClientResponse(
+                success=False,
+                error=str(e),
+                msg="Email ou Telephone n'est pas valide"
+            )
 
         client = Client(
             id = None,
@@ -80,6 +86,7 @@ class UpdateClientResponse:
     success: bool
     client: Optional[Client] = None
     error: Optional[str] = None
+    msg: Optional[str] = None
 
 
 class UpdateClientUseCase:
@@ -96,7 +103,8 @@ class UpdateClientUseCase:
         if not client:
             return UpdateClientResponse(
                 success=False,
-                error=f"Client non trouvé"
+                error="Ressource",
+                msg=f"Client non trouvé"
             )
 
         policy = UserPolicy(request.authorization)
@@ -104,7 +112,8 @@ class UpdateClientUseCase:
         if not policy.is_allowed():
             return UpdateClientResponse(
                 success=False,
-                error="Seuls les membres commerciaux associé au client peuvent le modifier"
+                error="Permission",
+                msg="Seuls les membres commerciaux associé au client peuvent le modifier"
             )
 
         email = telephone = fullname = company_name = None
@@ -113,13 +122,21 @@ class UpdateClientUseCase:
             try:
                 email = Email(request.email)
             except (ValidationError, InvalidEmailError, InvalidPhoneError) as e:
-                return UpdateClientResponse(success=False, error=str(e))
+                return UpdateClientResponse(
+                    success=False,
+                    error=str(e),
+                    msg="L'email n'est pas valide"
+                )
 
         if request.telephone is not None:
             try:
                 telephone = Telephone(request.telephone)
             except (ValidationError, InvalidEmailError, InvalidPhoneError) as e:
-                return UpdateClientResponse(success=False, error=str(e))
+                return UpdateClientResponse(
+                    success=False,
+                    error=str(e),
+                    msg="Le numéro detéléphone n'est pas valide"
+                )
 
         if request.fullname is not None:
             fullname = request.fullname
@@ -153,6 +170,7 @@ class ListClientResponse:
     success: bool
     clients: List[Client] = None
     error: Optional[str] = None
+    msg: Optional[str] = None
 
 
 class ListClientUseCase:
@@ -167,6 +185,12 @@ class ListClientUseCase:
                 criteres["commercial_contact_id"] = request.user_id
 
         all_clients = self.repository.find_all(criteres)
+        if not all_clients:
+            return ListClientResponse(
+                success=False,
+                error="Ressource",
+                msg="Aucun client trouvé"
+            )
         return ListClientResponse(success=True, clients=all_clients)
 
 #############################################################################
@@ -179,6 +203,7 @@ class GetClientResponse:
     success: bool
     client: Optional[Client] = None
     error: Optional[str] = None
+    msg: Optional[str] = None
 
 
 class GetClientUseCase:
@@ -191,7 +216,8 @@ class GetClientUseCase:
         if not client:
             return GetClientResponse(
                 success=False,
-                error=f"Client non trouvé"
+                error="Ressource",
+                msg=f"Client non trouvé"
             )
 
         return GetClientResponse(success=True, client=client)
@@ -208,6 +234,7 @@ class DeleteClientRequest:
 class DeleteClientResponse:
     success: bool
     error: Optional[str] = None
+    msg: Optional[str] = None
 
 
 class DeleteClientUseCase:
@@ -220,16 +247,17 @@ class DeleteClientUseCase:
         if not policy.is_allowed():
             return DeleteClientResponse(
                 success=False,
-                error="Seuls les membres administrateur peuvent supprimer des clients"
+                error="Permission",
+                msg="Seuls les membres administrateur peuvent supprimer des clients"
             )
 
         client = self.repository.find_by_id(request.client_id)
         if not client:
             return DeleteClientResponse(
                 success=False,
-                error=f"Client non trouvé"
+                error="Ressource",
+                msg=f"Client non trouvé"
             )
-
 
         self.repository.delete(client.id)
         return DeleteClientResponse(success=True)
