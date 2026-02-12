@@ -1,6 +1,7 @@
 import typer
 from rich.console import Console
 
+from helpers.helper_cli import error_display
 from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyUserRepository
 from src.infrastructures.security.security import BcryptPasswordHasher, JWTTokenManager, TokenStore
 from src.use_cases.auth_use_cases import AuthenticateUseCase, AuthenticateRequest
@@ -14,11 +15,11 @@ def access(ctx: typer.Context):
     token = TokenStore.has_token()
     if ctx.invoked_subcommand == "login":
         if token:
-            console.print("[green]Vous êtes déjà connecté[/green]")
+            error_display("Erreur Authentification", "Vous êtes déjà connecté")
             raise typer.Exit(1)
     if ctx.invoked_subcommand == "logout":
         if not token:
-            console.print("[red]Vous n'êtes pas connecté[/red]")
+            error_display("Erreur Authentification", "Vous n'êtes pas connecté")
             raise typer.Exit(1)
 
 @auth_app.command()
@@ -35,7 +36,7 @@ def login(ctx: typer.Context,
     request = AuthenticateRequest(email, password)
     response = use_case.execute(request)
     if response.success is False:
-        console.print(f"{response.error}")
+        error_display(response.error, response.msg)
     else:
         console.print("[green]Vous êtes connecté[/green]")
 
