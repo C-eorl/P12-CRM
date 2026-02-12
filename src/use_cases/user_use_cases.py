@@ -28,6 +28,7 @@ class CreateUserResponse:
     success: bool
     user: Optional[User] = None
     error: Optional[str] = None
+    msg: Optional[str] = None
 
 
 class CreateUserUseCase:
@@ -43,13 +44,18 @@ class CreateUserUseCase:
         if not policy.is_allowed():
             return CreateUserResponse(
                 success=False,
-                error="Seuls les membres gestion peuvent créer des utilisateurs"
+                error="Permission",
+                msg="Seuls les membres gestion peuvent créer des utilisateurs"
             )
 
         try:
             email = Email(request.email)
         except (ValidationError, InvalidEmailError) as e:
-            return CreateUserResponse(success=False, error=str(e))
+            return CreateUserResponse(
+                success=False,
+                error=str(e),
+                msg="Email non valide"
+            )
 
         hashed_password = self.password_hasher.hash_password(request.password)
 
@@ -70,8 +76,6 @@ class UpdateUserRequest:
     user_id: int
     fullname: Optional[str]
     email: Optional[str]
-    # password
-    # role
     authorization : RequestPolicy
 
 
@@ -80,6 +84,7 @@ class UpdateUserResponse:
     success: bool
     user: Optional[User] = None
     error: Optional[str] = None
+    msg: Optional[str] = None
 
 
 class UpdateUserUseCase:
@@ -95,14 +100,16 @@ class UpdateUserUseCase:
         if not policy.is_allowed():
             return UpdateUserResponse(
                 success=False,
-                error="Seuls les membres gestion peuvent modifier des clients"
+                error="Permission",
+                msg="Seuls les membres gestion peuvent modifier des clients"
             )
 
         user = self.repository.find_by_id(request.user_id)
         if not user:
             return UpdateUserResponse(
                 success=False,
-                error=f"Client non trouvé"
+                error="Ressource",
+                msg=f"Client non trouvé"
             )
 
         email = fullname = None
@@ -111,7 +118,11 @@ class UpdateUserUseCase:
             try:
                 email = Email(request.email)
             except (ValidationError, InvalidEmailError) as e:
-                return UpdateUserResponse(success=False, error=str(e))
+                return UpdateUserResponse(
+                    success=False,
+                    error=str(e),
+                    msg="Email non valide"
+                )
 
         if request.fullname is not None:
             fullname = request.fullname
@@ -142,6 +153,7 @@ class ListUserResponse:
     success: bool
     users: List[User] = None
     error: Optional[str] = None
+    msg: Optional[str] = None
 
 
 class ListUserUseCase:
@@ -158,6 +170,13 @@ class ListUserUseCase:
             case UserFilter.ROLE_ADMIN : criteres["role"] = Role.ADMIN
 
         all_user = self.repository.find_all(criteres)
+        if not all_user:
+            return ListUserResponse(
+                success=False,
+                error="Ressource",
+                msg="Aucun utilisateur trouvé"
+            )
+
         return ListUserResponse(success=True, users=all_user)
 
 
@@ -172,6 +191,7 @@ class GetUserResponse:
     success: bool
     user: Optional[User] = None
     error: Optional[str] = None
+    msg: Optional[str] = None
 
 
 class GetUserUseCase:
@@ -184,7 +204,8 @@ class GetUserUseCase:
         if not user:
             return GetUserResponse(
                 success=False,
-                error=f"Utilisateur non trouvé"
+                error="Ressource",
+                msg=f"Utilisateur non trouvé"
             )
 
         return GetUserResponse(success=True, user=user)
@@ -200,6 +221,7 @@ class DeleteUserRequest:
 class DeleteUserResponse:
     success: bool
     error: Optional[str] = None
+    msg: Optional[str] = None
 
 
 class DeleteUserUseCase:
@@ -212,14 +234,16 @@ class DeleteUserUseCase:
         if not policy.is_allowed():
             return DeleteUserResponse(
                 success=False,
-                error="Seuls les membres gestions peuvent supprimer des utilisateurs"
+                error="Permission",
+                msg="Seuls les membres gestions peuvent supprimer des utilisateurs"
             )
 
         user = self.repository.find_by_id(request.user_id)
         if not user:
             return DeleteUserResponse(
                 success=False,
-                error=f"Utilisateur non trouvé"
+                error="Ressource",
+                msg=f"Utilisateur non trouvé"
             )
 
         self.repository.delete(user.id)
