@@ -94,6 +94,12 @@ class Contrat:
     def is_fully_paid(self) -> bool:
         return self.balance_due.amount == 0
 
+    def update_info(self, amount: Optional[Money]) -> None:
+        if amount is not None:
+            self.contrat_amount = amount
+            self.balance_due = amount
+        self.updated_at = datetime.now()
+
     def __str__(self):
         return f"Contrat #{self.id} - {self.status} ({self.contrat_amount})"
 
