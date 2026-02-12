@@ -60,7 +60,5 @@ class UserPolicy:
             condition = getattr(self.request.context, key)
             expected = self.request.user.get(value)
             if expected != condition:
-                print("evaluation context invalide")
                 return False
-        print("evaluation context")
         return True
