@@ -3,13 +3,9 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Optional
 
-from dotenv import load_dotenv
 import bcrypt
 import jwt
 
-from src.domain.entities.entities import User
-
-load_dotenv()
 
 class BcryptPasswordHasher:
 
