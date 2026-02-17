@@ -49,9 +49,12 @@ class UserPolicy:
 
         match rule:
             case None : return False
-            case "*" : return True
             case dict() if len(rule) == 0 : return True
-            case _ : return self.evaluation_context(rule)
+            case dict() :
+                if self.request.context is None:
+                    return True
+                return self.evaluation_context(rule)
+            case _ : return False
 
 
     def evaluation_context(self, rule):
