@@ -243,7 +243,7 @@ def pay(ctx : typer.Context, contrat_id: int):
         error_display("Ressource", "Contrat non trouvé")
         raise typer.Exit()
 
-    if contrat.has_sign():
+    if not contrat.has_sign():
         error_display("Erreur Métier", "La signature du contrat est nécessaire")
         raise typer.Exit()
 
