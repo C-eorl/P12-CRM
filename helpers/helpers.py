@@ -5,7 +5,7 @@ from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyUser
 from src.infrastructures.security.security import TokenStore, JWTTokenManager
 
 
-def normalize(value: str) -> str | None:
+def normalize(value):
     return value if value not in ('', 0) else None
 
 
