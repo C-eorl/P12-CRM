@@ -111,7 +111,7 @@ def update(ctx: typer.Context, event_id: int):
         error_display("Permission", "Evènement non trouvé")
         raise typer.Exit()
 
-    if event.support_contact_id != ctx.obj["current_user"]["user_current_role"]:
+    if event.support_contact_id != ctx.obj["current_user"]["user_current_id"]:
         error_display("Permission", "Seuls les membres support associé à l'évènement peuvent le modifier")
         raise typer.Exit()
 
@@ -121,12 +121,12 @@ def update(ctx: typer.Context, event_id: int):
         action="update"
     )
 
-    name = typer.prompt("Nom de l'évènement: ", "", show_default=False)
-    start_date= typer.prompt('Date et heure de début (2000-00-00 00:00:00): ', "", show_default=False)
-    end_date = typer.prompt('Date et heure de fin (2000-00-00 00:00:00): ', "", show_default=False)
-    location = typer.prompt('Emplacement: ', "", show_default=False)
-    attendees = typer.prompt("Nombre de participant: ", "", show_default=False)
-    notes = typer.prompt("Notes: ", "", show_default=False)
+    name = typer.prompt("Nom de l'évènement ", "", show_default=False)
+    start_date= typer.prompt('Date et heure de début (2000-00-00 00:00:00) ', "", show_default=False)
+    end_date = typer.prompt('Date et heure de fin (2000-00-00 00:00:00) ', "", show_default=False)
+    location = typer.prompt('Emplacement ', "", show_default=False)
+    attendees = typer.prompt("Nombre de participant ", "", show_default=False)
+    notes = typer.prompt("Notes ", "", show_default=False)
 
     name = normalize(name)
     location = normalize(location)
@@ -136,8 +136,8 @@ def update(ctx: typer.Context, event_id: int):
     request = UpdateEventRequest(
         event_id=event_id,
         name=name,
-        start_date=datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S"),
-        end_date=datetime.strptime(end_date,"%Y-%m-%d %H:%M:%S"),
+        start_date=datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S") if start_date != "" else None,
+        end_date=datetime.strptime(end_date,"%Y-%m-%d %H:%M:%S") if end_date != "" else None,
         location=location,
         attendees=int(attendees),
         notes=notes,
