@@ -40,10 +40,10 @@ def main(ctx: typer.Context):
 
     if ctx.obj["current_user"] is None:
 
-        if ctx.invoked_subcommand not in ["auth", "init"]:
+        if ctx.invoked_subcommand not in ["auth"]:
             error_display("Erreur Authentification", "Veuillez vous connecter via - auth login -")
             raise typer.Exit(1)
-        if ctx.invoked_subcommand in ["auth", "init"]:
+        if ctx.invoked_subcommand in ["auth"]:
             pass
 
     if ctx.obj["current_user"] is not None:
@@ -53,33 +53,3 @@ def main(ctx: typer.Context):
         })
     ctx.call_on_close(ctx.obj["session"].close)
 
-@app.command()
-def init():
-    """Command initialize database"""
-    console.print("Veuillez vous connecter à votre Base de donnée via nos identifiant")
-    user = typer.prompt("Utilisateur", default="postgres")
-    password = typer.prompt("Mot de passe", default="")
-    db_name = typer.prompt("Nom de la base de donnée que vous allez créer")
-
-    try:
-        env = init_environment()
-        if not env:
-            error_display("Initialisation", "Fichier .env existe déja")
-        console.print("[green]Fichier .env généré[/green]")
-        result = init_postgresql(user, password, db_name)
-        if not result:
-            error_display("Initialisation", f"La base de donnée {db_name} existe déjà")
-            raise typer.Exit()
-        else:
-            console.print(f"[green]* Base de données {db_name} avec succès[/green]")
-
-        database_url = f"postgresql+psycopg2://{user}:{password}@localhost/{db_name}"
-        set_key(".env","DATABASE_URL",database_url)
-        os.environ["DATABASE_URL"] = database_url
-
-        console.print("[yellow]* Initialisation de la base de données...[/yellow]")
-        init_db()
-        console.print("[green]* Base de données initialisée avec succès![/green]")
-
-    except Exception as e:
-        console.print(f"[red] Erreur lors de l'initialisation: {str(e)}[/red]")
