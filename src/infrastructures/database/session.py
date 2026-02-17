@@ -1,4 +1,7 @@
 import os
+
+import psycopg2
+from psycopg2 import sql
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -7,10 +10,10 @@ from src.infrastructures.database.models import Base
 _engine = None
 _SessionLocal = None
 
-def init_engine():
+def init_engine(force=False):
     global _engine, _SessionLocal
 
-    if _engine is not None:
+    if _engine is not None and not force:
         return
 
     database_url = os.environ.get("DATABASE_URL")
@@ -25,7 +28,10 @@ def get_engine():
         init_engine()
     return _engine
 
+
 def init_db():
+    engine = get_engine() if _engine else None
+    init_engine(force=True)   # Force la recréation avec la nouvelle URL
     engine = get_engine()
     Base.metadata.create_all(engine)
 
@@ -33,3 +39,35 @@ def get_session() -> Session:
     if _SessionLocal is None:
         init_engine()
     return _SessionLocal()
+
+def init_postgresql(user, password, db_name):
+    try:
+        conn = psycopg2.connect(
+            dbname="postgres",
+            user=user,
+            password=password,
+            host="localhost",
+            port="5432",
+        )
+        conn.autocommit =True
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT 1 FROM pg_database WHERE datname = %s;",
+            (db_name,)
+        )
+        exist_db = cursor.fetchone()
+
+        if exist_db:
+            return False
+        else:
+            cursor.execute(
+                sql.SQL("CREATE DATABASE {}").format(
+                    sql.Identifier(db_name)
+                    )
+            )
+            cursor.close()
+            conn.close()
+            return True
+    except Exception as e:
+        raise e
