@@ -105,7 +105,7 @@ class UpdateContratUseCase:
             return UpdateContratResponse(
                 success=False,
                 error="Permission",
-                msg="Seuls les membres gestion peuvent modifier des contrats"
+                msg="Seuls les membres gestion ou commerciaux associé\n au contrat peuvent le modifier"
             )
         contrat.update_info(
             amount=request.contrat_amount,
