@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import typer
 from rich.console import Console
 
@@ -8,9 +10,7 @@ from src.infrastructures.database.session import get_session
 from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyUserRepository
 from src.infrastructures.security.security import BcryptPasswordHasher
 
-
 from dotenv import load_dotenv
-load_dotenv()
 console = Console()
 
 def create_admin():
@@ -61,4 +61,5 @@ def create_admin():
         console.print(f"[red] Erreur lors de la création: {str(e)}[/red]")
 
 if __name__ == "__main__":
+    load_dotenv()
     create_admin()
