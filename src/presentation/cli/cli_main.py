@@ -1,12 +1,12 @@
 import os
 
 import typer
-from dotenv import set_key, load_dotenv
+from dotenv import set_key
 from rich.console import Console
 from sentry_sdk import set_user
 
 from helpers.helper_cli import error_display
-from helpers.helpers import get_current_user
+from helpers.helpers import get_current_user, init_environment
 from src.infrastructures.database.session import get_session, init_db, init_postgresql
 from src.presentation.cli.commands.auth_commands import auth_app
 from src.presentation.cli.commands.client_commands import client_app
@@ -62,9 +62,13 @@ def init():
     db_name = typer.prompt("Nom de la base de donnée que vous allez créer")
 
     try:
+        env = init_environment()
+        if not env:
+            error_display("Initialisation", "Fichier .env existe déja")
+        console.print("[green]Fichier .env généré[/green]")
         result = init_postgresql(user, password, db_name)
         if not result:
-            error_display("Existant", f"La base de donnée {db_name} existe déjà")
+            error_display("Initialisation", f"La base de donnée {db_name} existe déjà")
             raise typer.Exit()
         else:
             console.print(f"[green]* Base de données {db_name} avec succès[/green]")
