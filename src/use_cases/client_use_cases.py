@@ -2,11 +2,9 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, List
 
-
 from src.domain.entities.entities import Client
 from src.domain.entities.exceptions import ValidationError, InvalidEmailError, InvalidPhoneError
 from src.domain.entities.value_objects import Email, Telephone
-
 from src.domain.interfaces.repository import ClientRepository
 from src.domain.policies.user_policy import UserPolicy, RequestPolicy
 

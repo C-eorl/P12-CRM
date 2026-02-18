@@ -5,7 +5,9 @@ from typing import Optional
 from src.domain.entities.enums import Role, ContractStatus
 from src.domain.entities.exceptions import BusinessRuleViolation
 from src.domain.entities.value_objects import Email, Telephone, Money
-
+######################################################################
+#                       Entité métier                                #
+######################################################################
 
 @dataclass
 class User:

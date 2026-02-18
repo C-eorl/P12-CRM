@@ -11,7 +11,6 @@ from rich.text import Text
 from helpers.helper_cli import error_display
 from helpers.helpers import normalize
 from src.domain.entities.entities import Event
-from src.domain.entities.enums import Role
 from src.domain.policies.user_policy import RequestPolicy, UserPolicy
 from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyEventRepository, SQLAlchemyUserRepository, \
     SQLAlchemyContratRepository, SQLAlchemyClientRepository
@@ -22,8 +21,9 @@ from src.use_cases.event_use_cases import ListEventUseCase, GetEventUseCase, Get
 event_app = typer.Typer()
 console = Console()
 
+
 @event_app.callback()
-def permission(ctx:typer.Context):
+def permission(ctx: typer.Context):
     """Callback - verify user role """
     ctx.obj["ressource"] = "EVENT"
     action = ctx.invoked_subcommand
@@ -73,8 +73,8 @@ def create(
     )
 
     request = CreateEventRequest(
-        name= name,
-        contrat_id = contrat_id,
+        name=name,
+        contrat_id=contrat_id,
         start_date=start_date,
         end_date=end_date,
         location=location,
@@ -122,7 +122,7 @@ def update(ctx: typer.Context, event_id: int):
     )
 
     name = typer.prompt("Nom de l'évènement ", "", show_default=False)
-    start_date= typer.prompt('Date et heure de début (2000-00-00 00:00:00) ', "", show_default=False)
+    start_date = typer.prompt('Date et heure de début (2000-00-00 00:00:00) ', "", show_default=False)
     end_date = typer.prompt('Date et heure de fin (2000-00-00 00:00:00) ', "", show_default=False)
     location = typer.prompt('Emplacement ', "", show_default=False)
     attendees = typer.prompt("Nombre de participant ", "", show_default=False)
@@ -137,7 +137,7 @@ def update(ctx: typer.Context, event_id: int):
         event_id=event_id,
         name=name,
         start_date=datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S") if start_date != "" else None,
-        end_date=datetime.strptime(end_date,"%Y-%m-%d %H:%M:%S") if end_date != "" else None,
+        end_date=datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S") if end_date != "" else None,
         location=location,
         attendees=int(attendees),
         notes=notes,
@@ -153,7 +153,7 @@ def update(ctx: typer.Context, event_id: int):
 
 
 @event_app.command(help="Afficher un évènement")
-def show(ctx : typer.Context, event_id: int):
+def show(ctx: typer.Context, event_id: int):
     """
     Command for show Event
     :param ctx:  typer.Context
@@ -173,6 +173,7 @@ def show(ctx : typer.Context, event_id: int):
     else:
         error_display(response.error, response.msg)
 
+
 @event_app.command(help="Afficher tous les évènement")
 def list(
         ctx: typer.Context,
@@ -180,7 +181,7 @@ def list(
             None, "--filter", "-f",
             help="Filter events"
         )
-    ):
+):
     """
     Command for list Event
     :param list_filter: filter event
@@ -188,7 +189,7 @@ def list(
     :return: None
     """
     request = ListEventRequest(
-        support_contact_id= ctx.obj["current_user"]["user_current_id"],
+        support_contact_id=ctx.obj["current_user"]["user_current_id"],
         list_filter=list_filter,
     )
     repo = SQLAlchemyEventRepository(ctx.obj["session"])
@@ -223,7 +224,7 @@ def assign(ctx: typer.Context, event_id: int):
         action="assign"
     )
 
-    support_user_id= typer.prompt("Id utilisateur Support: ")
+    support_user_id = typer.prompt("Id utilisateur Support: ")
 
     request = AssignSupportEventRequest(
         event_id=event_id,
@@ -238,6 +239,7 @@ def assign(ctx: typer.Context, event_id: int):
     else:
         error_display(response.error, response.msg)
 
+
 @event_app.command(help="Supprimer un évènement")
 def delete(ctx: typer.Context, event_id: int):
     """
@@ -249,7 +251,7 @@ def delete(ctx: typer.Context, event_id: int):
     repo = SQLAlchemyEventRepository(ctx.obj["session"])
     use_case = DeleteEventUseCase(repo)
 
-    #verification ressource existe
+    # verification ressource existe
     if not repo.exist(event_id):
         error_display("Ressource", "Evènement non trouvé")
         raise typer.Exit()
@@ -265,7 +267,7 @@ def delete(ctx: typer.Context, event_id: int):
     )
     request = DeleteEventRequest(
         event_id=event_id,
-        authorization= policy,
+        authorization=policy,
     )
 
     response = use_case.execute(request)
@@ -300,7 +302,6 @@ def _display_data(event: Event):
     content.append(f"Fin: ", style="bold cyan")
     content.append(f"{event.end_date.strftime('%d/%m/%Y %H:%M')}\n")
 
-
     content.append(f"\nLieu: ", style="bold cyan")
     content.append(f"{event.location}\n")
 
@@ -320,6 +321,7 @@ def _display_data(event: Event):
     )
 
     console.print(panel)
+
 
 def _display_data_list(events: List[Event], list_filter: EventFilter):
     """
@@ -343,7 +345,6 @@ def _display_data_list(events: List[Event], list_filter: EventFilter):
     table.add_column("Support", width=8, justify="center")
 
     for event in events:
-
         support = f"#{event.support_contact_id}" if event.support_contact_id else Text("-", style="dim")
 
         table.add_row(

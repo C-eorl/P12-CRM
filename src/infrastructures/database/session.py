@@ -11,6 +11,11 @@ _engine = None
 _SessionLocal = None
 
 def init_engine(force=False):
+    """
+    Initialize the database engine
+    :param force: force the engine to be initialized
+    :return:
+    """
     global _engine, _SessionLocal
 
     if _engine is not None and not force:
@@ -24,23 +29,42 @@ def init_engine(force=False):
     _SessionLocal = sessionmaker(bind=_engine)
 
 def get_engine():
+    """
+    Get a database engine instance or create it if it doesn't exist
+    :return:
+    """
     if _engine is None:
         init_engine()
     return _engine
 
 
 def init_db():
+    """
+    Initialize the table database
+    :return:
+    """
     engine = get_engine() if _engine else None
     init_engine(force=True)   # Force la recréation avec la nouvelle URL
     engine = get_engine()
     Base.metadata.create_all(engine)
 
 def get_session() -> Session:
+    """
+    Get a database session
+    :return: Session
+    """
     if _SessionLocal is None:
         init_engine()
     return _SessionLocal()
 
 def init_postgresql(user, password, db_name):
+    """
+    Initialize the DB or create it if it doesn't exist
+    :param user: username postgres
+    :param password: password postgres
+    :param db_name: name of the database
+    :return: True or False
+    """
     try:
         conn = psycopg2.connect(
             dbname="postgres",

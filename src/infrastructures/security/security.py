@@ -1,6 +1,6 @@
 import os
-from pathlib import Path
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Optional
 
 import bcrypt
@@ -8,19 +8,20 @@ import jwt
 
 
 class BcryptPasswordHasher:
-
+    # gestion du hashage des mots de passe
     def hash_password(self, password: str) -> str:
-        """Hash a password """
+        """ Hash a password """
         salt = bcrypt.gensalt()
         hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
         return hashed.decode('utf8')
 
     def verify_password(self, password: str, hashed: str) -> bool:
-        """Verify a hashed password """
+        """ Verify a hashed password """
         return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
 
 
 class JWTTokenManager:
+    # Gestion des jwt token
     def __init__(self):
         self.expiration = int(os.getenv("JWT_EXPIRATION_HOURS"))
         self.algorithm = os.getenv("JWT_ALGORITHM")
@@ -50,7 +51,7 @@ class JWTTokenManager:
 
 
 class TokenStore:
-
+    # gestion des tokens
     TOKEN_DIR = Path(__file__).resolve().parent
     TOKEN_FILE = TOKEN_DIR / "token"
 

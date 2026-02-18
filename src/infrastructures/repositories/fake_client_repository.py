@@ -1,10 +1,10 @@
 from typing import List, Optional
 
 from src.domain.entities.entities import Client, User, Contrat, Event
-from src.domain.entities.enums import Role
 
 
 class FakeClientRepository:
+    # Fake client repo for test
     def __init__(self):
         self.clients: dict[int, Client] = {}
         self._id_counter = 1
@@ -28,7 +28,6 @@ class FakeClientRepository:
                 data_client.company_name = client.company_name
                 return client
 
-
     def find_by_id(self, client_id: int) -> Optional[Client]:
         return self.clients.get(client_id)
 
@@ -39,8 +38,8 @@ class FakeClientRepository:
         self.clients.pop(client_id, None)
 
 
-
 class FakeUserRepository:
+    # Fake user repo for test
     def __init__(self):
         self.users: dict[int, User] = {}
         self._id_counter = 1
@@ -61,7 +60,6 @@ class FakeUserRepository:
             data_user.updated_at = user.updated_at
             return data_user
 
-
     def find_by_id(self, user_id: int) -> Optional[User]:
         return self.users.get(user_id)
 
@@ -78,8 +76,8 @@ class FakeUserRepository:
         self.users.pop(user_id, None)
 
 
-
 class FakeContratRepository:
+    # Fake contrat repo for test
     def __init__(self):
         self.contrats: dict[int, Contrat] = {}
         self._id_counter = 1
@@ -101,7 +99,6 @@ class FakeContratRepository:
             data_contrat.updated_at = contrat.updated_at
             return data_contrat
 
-
     def find_by_id(self, contrat_id: int) -> Optional[Contrat]:
         return self.contrats.get(contrat_id)
 
@@ -112,8 +109,8 @@ class FakeContratRepository:
         self.contrats.pop(contrat_id, None)
 
 
-
 class FakeEventRepository:
+    # Fake event repo for test
     def __init__(self):
         self.events: dict[int, Event] = {}
         self._id_counter = 1
@@ -138,7 +135,6 @@ class FakeEventRepository:
             data_event.notes = event.notes
             data_event.updated_at = event.updated_at
             return data_event
-
 
     def find_by_id(self, event_id: int) -> Optional[Event]:
         return self.events.get(event_id)

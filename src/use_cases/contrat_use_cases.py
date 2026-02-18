@@ -61,6 +61,7 @@ class CreateContratUseCase:
         saved_contrat = self.repository.save(contrat)
         return CreateContratResponse(success=True, contrat=saved_contrat)
 
+
 ##############################################################################
 @dataclass
 class UpdateContratRequest:
@@ -75,6 +76,7 @@ class UpdateContratResponse:
     contrat: Optional[Contrat] = None
     error: Optional[str] = None
     msg: Optional[str] = None
+
 
 class UpdateContratUseCase:
     """Use case for updating a contrat"""
@@ -114,6 +116,7 @@ class UpdateContratUseCase:
         updated_contrat = self.repository.save(contrat)
         return UpdateContratResponse(success=True, contrat=updated_contrat)
 
+
 ##############################################################################
 class ContratFilter(Enum):
     MINE = "mine"
@@ -122,10 +125,12 @@ class ContratFilter(Enum):
     NOT_FULLY_PAID = "not-fully-paid"
     FULLY_PAID = "fully-paid"
 
+
 @dataclass
 class ListContratRequest:
     commercial_contact_id: int
     list_filter: Optional[ContratFilter]
+
 
 @dataclass
 class ListContratResponse:
@@ -165,6 +170,7 @@ class ListContratUseCase:
 
         return ListContratResponse(success=True, contrats=contrats)
 
+
 ##############################################################################
 @dataclass
 class GetContratRequest:
@@ -186,7 +192,6 @@ class GetContratUseCase:
         self.repository = contrat_repository
 
     def execute(self, request: GetContratRequest) -> GetContratResponse:
-
         contrat = self.repository.find_by_id(request.contrat_id)
         if not contrat:
             return GetContratResponse(
@@ -196,6 +201,7 @@ class GetContratUseCase:
             )
 
         return GetContratResponse(success=True, contrat=contrat)
+
 
 ##############################################################################
 @dataclass
@@ -238,6 +244,7 @@ class DeleteContratUseCase:
         self.repository.delete(contrat.id)
         return DeleteContratResponse(success=True)
 
+
 ##############################################################################
 
 @dataclass
@@ -252,6 +259,7 @@ class SignContratResponse:
     contrat: Optional[Contrat] = None
     error: Optional[str] = None
     msg: Optional[str] = None
+
 
 class SignContratUseCase:
     """Use case for sign a contrat"""
@@ -289,6 +297,7 @@ class SignContratUseCase:
 
         self.repository.save(contrat)
         return SignContratResponse(success=True, contrat=contrat)
+
 
 ##############################################################################
 @dataclass

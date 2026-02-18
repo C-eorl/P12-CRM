@@ -96,20 +96,21 @@ class CreateEventUseCase:
         client_id = contrat.client_id
 
         event = Event(
-            id=  None,
-            name =  request.name,
-            contrat_id = request.contrat_id,
-            client_id = client_id,
-            support_contact_id = None,
-            start_date = request.start_date,
-            end_date = request.end_date,
-            location = request.location,
-            attendees = request.attendees,
-            notes = request.notes,
-            )
+            id=None,
+            name=request.name,
+            contrat_id=request.contrat_id,
+            client_id=client_id,
+            support_contact_id=None,
+            start_date=request.start_date,
+            end_date=request.end_date,
+            location=request.location,
+            attendees=request.attendees,
+            notes=request.notes,
+        )
 
         saved_event = self.event_repository.save(event)
         return CreateEventResponse(success=True, event=saved_event)
+
 
 ##############################################################################
 @dataclass
@@ -166,19 +167,21 @@ class UpdateEventUseCase:
             request.notes,
         )
 
-
         updated_event = self.repository.save(event)
         return UpdateEventResponse(success=True, event=updated_event)
+
 
 ##############################################################################
 class EventFilter(Enum):
     WITHOUT_SUPPORT = "no-support"
     MINE = "mine"
 
+
 @dataclass
 class ListEventRequest:
     support_contact_id: int
     list_filter: Optional[EventFilter]
+
 
 @dataclass
 class ListEventResponse:
@@ -186,6 +189,7 @@ class ListEventResponse:
     events: List[Event] = None
     error: Optional[str] = None
     msg: Optional[str] = None
+
 
 class ListEventUseCase:
     """Use case for listing contrats"""
@@ -211,6 +215,7 @@ class ListEventUseCase:
 
         return ListEventResponse(success=True, events=events)
 
+
 ##############################################################################
 @dataclass
 class GetEventRequest:
@@ -232,7 +237,6 @@ class GetEventUseCase:
         self.repository = event_repository
 
     def execute(self, request: GetEventRequest) -> GetEventResponse:
-
         event = self.repository.find_by_id(request.event_id)
         if not event:
             return GetEventResponse(
@@ -242,6 +246,7 @@ class GetEventUseCase:
             )
 
         return GetEventResponse(success=True, event=event)
+
 
 ##############################################################################
 @dataclass
@@ -284,6 +289,7 @@ class DeleteEventUseCase:
         self.repository.delete(event.id)
         return DeleteEventResponse(success=True)
 
+
 ##############################################################################
 
 @dataclass
@@ -292,14 +298,17 @@ class AssignSupportEventRequest:
     support_user_id: int
     authorization: RequestPolicy
 
+
 @dataclass
 class AssignSupportEventResponse:
     success: bool
     error: Optional[str] = None
     msg: Optional[str] = None
 
+
 class AssignSupportEventUseCase:
     """Use case for assigning support events"""
+
     def __init__(self, event_repository: EventRepository, user_repository: UserRepository):
         self.repository = event_repository
         self.user_repository = user_repository

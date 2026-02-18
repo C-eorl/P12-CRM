@@ -1,9 +1,12 @@
 import re
 from dataclasses import dataclass
 from decimal import Decimal
-from functools import total_ordering
 
 from src.domain.entities.exceptions import InvalidPhoneError, InvalidEmailError, InvalidAmountError
+
+######################################################################
+#                       Objet métier                                 #
+######################################################################
 
 @dataclass(frozen=True)
 class Money:

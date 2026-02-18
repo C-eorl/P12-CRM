@@ -9,8 +9,7 @@ from rich.text import Text
 
 from helpers.helper_cli import error_display
 from helpers.helpers import normalize
-
-from src.domain.entities.entities import  Client
+from src.domain.entities.entities import Client
 from src.domain.policies.user_policy import RequestPolicy, UserPolicy
 from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyClientRepository
 from src.use_cases.client_use_cases import GetClientUseCase, GetClientRequest, CreateClientRequest, CreateClientUseCase, \

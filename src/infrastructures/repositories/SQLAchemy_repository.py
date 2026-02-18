@@ -14,6 +14,7 @@ from src.infrastructures.database.models import ClientModel, UserModel, ContratM
 ###########################################################################################
 class SQLAlchemyClientRepository:
     """SQL Alchemy Client repository """
+
     def __init__(self, session: Session):
         self.session = session
 
@@ -40,7 +41,6 @@ class SQLAlchemyClientRepository:
             db_client.telephone = str(client.telephone)
             db_client.company_name = client.company_name
             db_client.updated_at = client.updated_at
-
 
         self.session.commit()
         return self._to_entity(db_client)
@@ -93,11 +93,13 @@ class SQLAlchemyClientRepository:
             updated_at=model.updated_at
         )
 
+
 ###########################################################################################
 #                       USER
 ###########################################################################################
 class SQLAlchemyUserRepository:
     """SQL Alchemy User repository """
+
     def __init__(self, session: Session):
         self.session = session
 
@@ -123,7 +125,6 @@ class SQLAlchemyUserRepository:
             db_user.password = user.password
             db_user.role = user.role
             db_user.updated_at = user.updated_at
-
 
         self.session.commit()
         return self._to_entity(db_user)
@@ -168,7 +169,6 @@ class SQLAlchemyUserRepository:
         self.session.delete(find_user)
         self.session.commit()
 
-
     @staticmethod
     def _to_entity(model: UserModel) -> User:
         """Converts a database user to a domain entity"""
@@ -182,11 +182,13 @@ class SQLAlchemyUserRepository:
             updated_at=model.updated_at
         )
 
+
 ###########################################################################################
 #                       CONTRAT
 ###########################################################################################
 class SQLAlchemyContratRepository:
     """SQL Alchemy Contrat repository """
+
     def __init__(self, session: Session):
         self.session = session
 
@@ -195,11 +197,11 @@ class SQLAlchemyContratRepository:
         if contrat.id is None:
 
             db_contrat = ContratModel(
-                client_id = contrat.client_id,
-                commercial_contact_id = contrat.commercial_contact_id,
-                contrat_amount = int(contrat.contrat_amount.amount),
-                balance_due = int(contrat.balance_due.amount),
-                status = contrat.status,
+                client_id=contrat.client_id,
+                commercial_contact_id=contrat.commercial_contact_id,
+                contrat_amount=int(contrat.contrat_amount.amount),
+                balance_due=int(contrat.balance_due.amount),
+                status=contrat.status,
                 created_at=contrat.created_at,
                 updated_at=contrat.updated_at
             )
@@ -214,7 +216,6 @@ class SQLAlchemyContratRepository:
             db_contrat.balance_due = int(contrat.balance_due.amount)
             db_contrat.status = contrat.status
             db_contrat.updated_at = contrat.updated_at
-
 
         self.session.commit()
         return self._to_entity(db_contrat)
@@ -255,13 +256,11 @@ class SQLAlchemyContratRepository:
 
         return [self._to_entity(db_contrat) for db_contrat in db_contrats]
 
-
     def delete(self, contrat_id: int) -> None:
         """Deletes a contrat"""
         find_contrat = self.session.get(ContratModel, contrat_id)
         self.session.delete(find_contrat)
         self.session.commit()
-
 
     @staticmethod
     def _to_entity(model: ContratModel) -> Contrat:
@@ -276,6 +275,7 @@ class SQLAlchemyContratRepository:
             created_at=model.created_at,
             updated_at=model.updated_at
         )
+
 
 ###########################################################################################
 #                       EVENT
@@ -309,16 +309,15 @@ class SQLAlchemyEventRepository:
             db_event = self.session.get(EventModel, event.id)
 
             db_event.name = event.name
-            db_event.contrat_id=event.contrat_id
-            db_event.client_id=event.client_id
-            db_event.support_contact_id=event.support_contact_id
-            db_event.start_date=event.start_date
-            db_event.end_date=event.end_date
-            db_event.location=event.location
-            db_event.attendees=event.attendees
-            db_event.notes=event.notes
+            db_event.contrat_id = event.contrat_id
+            db_event.client_id = event.client_id
+            db_event.support_contact_id = event.support_contact_id
+            db_event.start_date = event.start_date
+            db_event.end_date = event.end_date
+            db_event.location = event.location
+            db_event.attendees = event.attendees
+            db_event.notes = event.notes
             db_event.updated_at = event.updated_at
-
 
         self.session.commit()
         return self._to_entity(db_event)
@@ -355,7 +354,6 @@ class SQLAlchemyEventRepository:
         find_event = self.session.get(EventModel, event_id)
         self.session.delete(find_event)
         self.session.commit()
-
 
     @staticmethod
     def _to_entity(model: EventModel) -> Event:

@@ -10,7 +10,6 @@ from rich.text import Text
 from helpers.helper_cli import error_display
 from helpers.helpers import normalize
 from src.domain.entities.entities import Contrat
-from src.domain.entities.enums import Role
 from src.domain.entities.value_objects import Money
 from src.domain.policies.user_policy import RequestPolicy, UserPolicy
 from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyContratRepository, \
@@ -18,7 +17,7 @@ from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyCont
 from src.use_cases.contrat_use_cases import CreateContratRequest, CreateContratUseCase, UpdateContratRequest, \
     UpdateContratUseCase, GetContratRequest, GetContratUseCase, ListContratUseCase, SignContratRequest, \
     SignContratUseCase, RecordPaymentContratRequest, RecordPaymentContratUseCase, ContratFilter, ListContratRequest, \
-    DeleteContratUseCase, DeleteContratRequest, UpdateContratResponse
+    DeleteContratUseCase, DeleteContratRequest
 
 contrat_app = typer.Typer()
 console = Console()

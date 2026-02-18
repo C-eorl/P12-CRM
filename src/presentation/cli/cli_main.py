@@ -1,13 +1,10 @@
-import os
-
 import typer
-from dotenv import set_key
 from rich.console import Console
 from sentry_sdk import set_user
 
 from helpers.helper_cli import error_display
-from helpers.helpers import get_current_user, init_environment
-from src.infrastructures.database.session import get_session, init_db, init_postgresql
+from helpers.helpers import get_current_user
+from src.infrastructures.database.session import get_session
 from src.presentation.cli.commands.auth_commands import auth_app
 from src.presentation.cli.commands.client_commands import client_app
 from src.presentation.cli.commands.contrat_commands import contrat_app

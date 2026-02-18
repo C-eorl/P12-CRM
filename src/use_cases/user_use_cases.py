@@ -19,7 +19,7 @@ class CreateUserRequest:
     email: str
     password: str
     role: Role
-    authorization : RequestPolicy
+    authorization: RequestPolicy
 
 
 @dataclass
@@ -60,15 +60,16 @@ class CreateUserUseCase:
         hashed_password = self.password_hasher.hash_password(request.password)
 
         user = User(
-            id = None,
+            id=None,
             fullname=request.fullname,
-            email = email,
-            password= hashed_password,
-            role = Role(request.role),
+            email=email,
+            password=hashed_password,
+            role=Role(request.role),
         )
         saved_user = self.repository.save(user)
 
         return CreateUserResponse(success=True, user=saved_user)
+
 
 ################################################################################################
 @dataclass
@@ -76,7 +77,7 @@ class UpdateUserRequest:
     user_id: int
     fullname: Optional[str]
     email: Optional[str]
-    authorization : RequestPolicy
+    authorization: RequestPolicy
 
 
 @dataclass
@@ -91,6 +92,7 @@ class UpdateUserUseCase:
     """
     Use case for updating associated client.
     """
+
     def __init__(self, user_repository: UserRepository):
         self.repository = user_repository
 
@@ -127,15 +129,15 @@ class UpdateUserUseCase:
         if request.fullname is not None:
             fullname = request.fullname
 
-
         user.update_info(
-            fullname = fullname,
-            email = email,
+            fullname=fullname,
+            email=email,
         )
 
         updated_user = self.repository.save(user)
 
         return UpdateUserResponse(success=True, user=updated_user)
+
 
 ################################################################################################
 class UserFilter(Enum):
@@ -144,9 +146,11 @@ class UserFilter(Enum):
     ROLE_GESTION = "role:gestion"
     ROLE_ADMIN = "role:admin"
 
+
 @dataclass
 class ListUserRequest:
     list_filter: Optional[UserFilter]
+
 
 @dataclass
 class ListUserResponse:
@@ -158,16 +162,21 @@ class ListUserResponse:
 
 class ListUserUseCase:
     """Use case for listing associated clients"""
+
     def __init__(self, user_repository: UserRepository):
         self.repository = user_repository
 
     def execute(self, request: ListUserRequest) -> ListUserResponse:
-        criteres = {"role" : None}
+        criteres = {"role": None}
         match request.list_filter:
-            case UserFilter.ROLE_COMMERCIAL : criteres["role"] = Role.COMMERCIAL
-            case UserFilter.ROLE_GESTION : criteres["role"] = Role.GESTION
-            case UserFilter.ROLE_SUPPORT : criteres["role"] = Role.SUPPORT
-            case UserFilter.ROLE_ADMIN : criteres["role"] = Role.ADMIN
+            case UserFilter.ROLE_COMMERCIAL:
+                criteres["role"] = Role.COMMERCIAL
+            case UserFilter.ROLE_GESTION:
+                criteres["role"] = Role.GESTION
+            case UserFilter.ROLE_SUPPORT:
+                criteres["role"] = Role.SUPPORT
+            case UserFilter.ROLE_ADMIN:
+                criteres["role"] = Role.ADMIN
 
         all_user = self.repository.find_all(criteres)
         if not all_user:
@@ -216,6 +225,7 @@ class GetUserUseCase:
 class DeleteUserRequest:
     user_id: int
     authorization: RequestPolicy
+
 
 @dataclass
 class DeleteUserResponse:
