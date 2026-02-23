@@ -11,14 +11,14 @@ from src.domain.entities.value_objects import Money
 def test_contrat_entity(contrat):
     assert isinstance(contrat, Contrat)
 
-def test_contrat_already_signed(contrat):
-    contrat.sign()
+def test_contrat_already_signed(contrat2):
+    contrat2.sign()
     with pytest.raises(BusinessRuleViolation):
-        contrat.sign()
+        contrat2.sign()
 
-def test_contrat_sign(contrat):
-    contrat.sign()
-    assert contrat.status == ContractStatus.SIGNED
+def test_contrat_sign(contrat2):
+    contrat2.sign()
+    assert contrat2.status == ContractStatus.SIGNED
 
 def test_contrat_record_payment(contrat):
     payment = Money(50)

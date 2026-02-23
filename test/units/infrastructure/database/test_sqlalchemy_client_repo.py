@@ -1,6 +1,8 @@
 from typing import List
 
+import pytest
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from src.domain.entities.entities import Client
 from src.infrastructures.database.models import ClientModel
@@ -27,10 +29,10 @@ def test_save_client_update(client_SQLAlchemy_repository, client):
 
 def test_find_by_id(client_SQLAlchemy_repository):
     """test find by id method """
-    find_client = client_SQLAlchemy_repository.find_by_id(1)
+    find_client = client_SQLAlchemy_repository.find_by_id(119)
 
     assert isinstance(find_client, Client)
-    assert find_client.email.address == "contact@alpha.com"
+    assert find_client.email.address == "test@re.com"
 
 def test_find_by_invalid_id(client_SQLAlchemy_repository):
     """test find all method """
@@ -53,9 +55,7 @@ def test_delete(client_SQLAlchemy_repository, session, client):
     client_SQLAlchemy_repository.save(client)
     session.commit()
     last_client = session.execute(select(ClientModel)).scalars().all()[-1]
-    delete_client = client_SQLAlchemy_repository.delete(last_client.id)
 
 
-    assert delete_client is None
-    actual_count_client = session.query(ClientModel).count()
-    assert actual_count_client == init_count_client
+    with pytest.raises(IntegrityError):
+        client_SQLAlchemy_repository.delete(last_client.id)

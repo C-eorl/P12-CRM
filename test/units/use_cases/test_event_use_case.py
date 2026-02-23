@@ -12,22 +12,22 @@ from src.use_cases.event_use_cases import CreateEventUseCase, CreateEventRequest
 ######################################################################
 #                            Create Contrat Use Case                 #
 ######################################################################
-def test_create_event(event_repository):
+def test_create_event(event_repository, contrat_repository):
     """Test creating a new contrat via use case"""
     repo = event_repository
-    uc = CreateEventUseCase(repo)
+    contrat_repo = contrat_repository
+    uc = CreateEventUseCase(repo, contrat_repo)
 
     request = CreateEventRequest(
         name = "ttes",
-        contrat_id= 80,
-        client_id= 3,
+        contrat_id= 1,
         start_date= datetime.strptime("2026-05-10 10:00:00", "%Y-%m-%d %H:%M:%S"),
         end_date= datetime.strptime("2026-05-10 18:00:00", "%Y-%m-%d %H:%M:%S"),
         location="rtret",
         attendees=450,
         notes="",
         authorization=RequestPolicy(
-            user={"user_current_id": 1, "user_current_role": Role.COMMERCIAL},
+            user={"user_current_id": 4, "user_current_role": Role.COMMERCIAL},
             ressource="EVENT",
             action="create",
         )
@@ -42,15 +42,15 @@ def test_create_event(event_repository):
     found = repo.find_by_id(response.event.id)
     assert found is not None
 
-def test_create_event_no_commercial_user(event_repository):
+def test_create_event_no_commercial_user(event_repository, contrat_repository):
     """Test creating a contrat without gestion permission"""
     repo = event_repository
-    uc = CreateEventUseCase(repo)
+    contrat_repo = contrat_repository
+    uc = CreateEventUseCase(repo, contrat_repo)
 
     request = CreateEventRequest(
         name="ttes",
-        contrat_id=80,
-        client_id=3,
+        contrat_id=1,
         start_date=datetime.strptime("2026-05-10 10:00:00", "%Y-%m-%d %H:%M:%S"),
         end_date=datetime.strptime("2026-05-10 18:00:00", "%Y-%m-%d %H:%M:%S"),
         location="rtret",

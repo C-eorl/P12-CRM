@@ -1,6 +1,5 @@
 import os
 from datetime import datetime
-from email._policybase import Policy
 
 import pytest
 
@@ -14,7 +13,7 @@ from src.domain.policies.user_policy import UserPolicy, RequestPolicy
 from src.infrastructures.database.models import Base
 from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyClientRepository, SQLAlchemyUserRepository, \
     SQLAlchemyContratRepository, SQLAlchemyEventRepository
-from src.infrastructures.repositories.fake_client_repository import FakeClientRepository, FakeUserRepository, \
+from src.infrastructures.repositories.fake_repository import FakeClientRepository, FakeUserRepository, \
     FakeContratRepository, FakeEventRepository
 
 from dotenv import load_dotenv
@@ -76,7 +75,7 @@ def contrat():
         commercial_contact_id= 4,
         contrat_amount=Money(100),
         balance_due=Money(100),
-        status= ContractStatus.UNSIGNED
+        status= ContractStatus.SIGNED
     )
 
 @pytest.fixture
@@ -150,7 +149,7 @@ def event_repository(event,event2, client):
     repo.save(event2)
     return repo
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def session():
     engine = create_engine(DATABASE_URL, echo=False)
     Base.metadata.create_all(engine)

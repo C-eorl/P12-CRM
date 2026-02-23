@@ -91,7 +91,7 @@ def test_update_contrat(contrat_repository):
     uc = UpdateContratUseCase(repo)
 
     request = UpdateContratRequest(
-        contrat_id=1,
+        contrat_id=2,
         contrat_amount=Money(2000),
         authorization=RequestPolicy(
             user={"user_current_id": 1, "user_current_role": Role.GESTION},
@@ -105,7 +105,7 @@ def test_update_contrat(contrat_repository):
     assert isinstance(response, UpdateContratResponse)
     assert response.success is True
 
-    updated = repo.find_by_id(1)
+    updated = repo.find_by_id(2)
     assert updated.contrat_amount.amount == 2000
 
 def test_update_contrat_not_found(contrat_repository):
@@ -241,14 +241,13 @@ def test_delete_contrat_no_admin(contrat_repository):
 def test_sign_contrat_success(contrat_repository):
     """Test signing a contrat"""
     repo = contrat_repository
-    contrat_db = repo.find_by_id(1)
-    contrat_db.commercial_contact_id = 1
+    contrat_db = repo.find_by_id(2)
     uc = SignContratUseCase(repo)
 
     request = SignContratRequest(
-        contrat_id=1,
+        contrat_id=2,
         authorization=RequestPolicy(
-            user={"user_current_id": 1, "user_current_role": Role.COMMERCIAL},
+            user={"user_current_id": 5, "user_current_role": Role.COMMERCIAL},
             ressource="CONTRAT",
             action="sign",
             context=contrat_db,
