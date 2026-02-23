@@ -92,7 +92,7 @@ class EventModel(Base):
     client_id: Mapped[int] = mapped_column(ForeignKey("clients.id"), nullable=False)
     client: Mapped[ClientModel] = relationship(back_populates="events")
 
-    support_contact_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    support_contact_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=True)
     support_contact: Mapped[UserModel] = relationship(back_populates="events")
 
     start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
