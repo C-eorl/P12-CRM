@@ -35,11 +35,9 @@ class CreateEventUseCase:
     def __init__(
             self, event_repository: EventRepository,
             contrat_repository: ContratRepository,
-            client_repository: ClientRepository
     ):
         self.event_repository = event_repository
         self.contrat_repository = contrat_repository
-        self.client_repository = client_repository
 
     def execute(self, request: CreateEventRequest) -> CreateEventResponse:
 
