@@ -4,8 +4,10 @@ import psycopg2
 from psycopg2 import sql
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
-
+from dotenv import load_dotenv
 from src.infrastructures.database.models import Base
+
+load_dotenv()
 
 _engine = None
 _SessionLocal = None
