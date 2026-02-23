@@ -31,9 +31,11 @@ def main(ctx: typer.Context):
     """
 
     ctx.ensure_object(dict)
-    ctx.obj["session"] = get_session()
-    ctx.obj["current_user"] = get_current_user()
+    if "session" not in ctx.obj:
+        ctx.obj["session"] = get_session()
 
+    if "current_user" not in ctx.obj:
+        ctx.obj["current_user"] = get_current_user()
 
     if ctx.obj["current_user"] is None:
 

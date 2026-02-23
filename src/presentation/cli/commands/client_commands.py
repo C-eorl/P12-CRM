@@ -209,7 +209,7 @@ def delete(ctx: typer.Context, client_id: int, ):
 
     #verification ressource existe
     if not repo.exist(client_id):
-        error_display("Permission","Client non trouvé")
+        error_display("Ressource","Client non trouvé")
         raise typer.Exit()
 
     if not typer.confirm(f"Etes-vous sure de vouloir supprimer le Client #{client_id} ?"):
