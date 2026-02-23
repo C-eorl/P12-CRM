@@ -84,8 +84,7 @@ def create(
     )
     event_repo = SQLAlchemyEventRepository(ctx.obj["session"])
     contrat_repo = SQLAlchemyContratRepository(ctx.obj["session"])
-    client_repo = SQLAlchemyClientRepository(ctx.obj["session"])
-    use_case = CreateEventUseCase(event_repo, contrat_repo, client_repo)
+    use_case = CreateEventUseCase(event_repo, contrat_repo)
     response = use_case.execute(request)
 
     if response.success:
@@ -108,12 +107,12 @@ def update(ctx: typer.Context, event_id: int):
 
     event = repo.find_by_id(event_id)
     if not event:
-        error_display("Permission", "Evènement non trouvé")
-        raise typer.Exit()
+        error_display("Ressource", "Evènement non trouvé")
+        raise typer.Exit(1)
 
     if event.support_contact_id != ctx.obj["current_user"]["user_current_id"]:
         error_display("Permission", "Seuls les membres support associé à l'évènement peuvent le modifier")
-        raise typer.Exit()
+        raise typer.Exit(1)
 
     policy = RequestPolicy(
         user=ctx.obj["current_user"],
