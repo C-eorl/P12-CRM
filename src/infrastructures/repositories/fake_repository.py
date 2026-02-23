@@ -37,6 +37,12 @@ class FakeClientRepository:
     def delete(self, client_id: int) -> None:
         self.clients.pop(client_id, None)
 
+    def exist(self, client_id: int) -> bool:
+        if client_id in self.clients:
+            return True
+        else:
+            return False
+
 
 class FakeUserRepository:
     # Fake user repo for test
@@ -75,6 +81,12 @@ class FakeUserRepository:
     def delete(self, user_id: int) -> None:
         self.users.pop(user_id, None)
 
+    def exist(self, user_id: int) -> bool:
+        if user_id in self.users:
+            return True
+        else:
+            return False
+
 
 class FakeContratRepository:
     # Fake contrat repo for test
@@ -107,6 +119,12 @@ class FakeContratRepository:
 
     def delete(self, contrat_id: int) -> None:
         self.contrats.pop(contrat_id, None)
+
+    def exist(self, contrat_id: int) -> bool:
+        if contrat_id in self.contrats:
+            return True
+        else:
+            return False
 
 
 class FakeEventRepository:
@@ -141,6 +159,12 @@ class FakeEventRepository:
 
     def find_all(self, criteres) -> List[Event]:
         return list(self.events.values())
+
+    def exist(self, event_id: int) -> bool:
+        if event_id in self.events:
+            return True
+        else:
+            return False
 
     def delete(self, event_id: int) -> None:
         self.events.pop(event_id, None)
