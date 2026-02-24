@@ -45,6 +45,11 @@ cd P12-CRM
 python3 -m venv .venv
 source .venv/bin/activate
 ```
+
+* installer les dépendences
+```bash
+pip install -r requirements.txt
+```
 * initialiser la base de donnée et créer un utilisateur admin
 
 Le projet necessite une base de donnée **PostgreSQL**.
