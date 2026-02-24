@@ -27,11 +27,12 @@ def init():
         env = init_environment()
         if not env:
             error_display("Initialisation", "Fichier .env existe déja")
+            return False
         console.print("[green]Fichier .env généré[/green]")
         result = init_postgresql(user, password, db_name)
         if not result:
             error_display("Initialisation", f"La base de donnée {db_name} existe déjà")
-            raise typer.Exit()
+            return False
         else:
             console.print(f"[green]* Base de données {db_name} avec succès[/green]")
 
@@ -42,9 +43,11 @@ def init():
         console.print("[yellow]* Initialisation de la base de données...[/yellow]")
         init_db()
         console.print("[green]* Base de données initialisée avec succès![/green]")
+        return True
 
     except Exception as e:
         console.print(f"[red] Erreur lors de l'initialisation: {str(e)}[/red]")
+        return False
 
 
 def create_admin():
@@ -96,6 +99,7 @@ def create_admin():
 
 
 if __name__ == "__main__":
-    init()
+    if not init():
+        raise SystemExit(1)
     load_dotenv()
     create_admin()
