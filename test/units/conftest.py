@@ -5,11 +5,12 @@ import pytest
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool.impl import NullPool
 
 from src.domain.entities.entities import User, Client, Contrat, Event
 from src.domain.entities.enums import Role, ContractStatus
 from src.domain.entities.value_objects import Email, Telephone, Money
-from src.domain.policies.user_policy import UserPolicy, RequestPolicy
+from src.domain.policies.user_policy import UserPolicy
 from src.infrastructures.database.models import Base
 from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyClientRepository, SQLAlchemyUserRepository, \
     SQLAlchemyContratRepository, SQLAlchemyEventRepository
@@ -149,18 +150,27 @@ def event_repository(event,event2, client):
     repo.save(event2)
     return repo
 
-@pytest.fixture
-def session():
-    engine = create_engine(DATABASE_URL, echo=False)
+
+@pytest.fixture(scope="session")
+def engine():
+    engine = create_engine(
+        DATABASE_URL,
+        poolclass=NullPool,
+    )
     Base.metadata.create_all(engine)
+    return engine
+
+
+@pytest.fixture(scope="function")
+def session(engine):
     SessionLocal = sessionmaker(bind=engine)
     session = SessionLocal()
-    trans = session.begin()
+    try:
+        yield session
+    finally:
+        session.rollback()
+        session.close()
 
-    yield session
-
-    session.rollback()
-    session.close()
 
 @pytest.fixture
 def policy(request):
