@@ -264,7 +264,7 @@ def _display_data_list(users: List[User], list_filter: UserFilter):
     for user in users:
 
         table.add_row(
-            str(user.id or "-"),
+            str(user.id),
             user.fullname,
             str(user.email),
             user.role.name,

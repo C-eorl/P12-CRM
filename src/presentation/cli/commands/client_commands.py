@@ -286,7 +286,7 @@ def _display_data_list(clients: List[Client], filtre: ClientFilter):
     for client in clients:
 
         table.add_row(
-            str(client.id or "-"),
+            str(client.id),
             client.fullname,
             str(client.email),
             str(client.telephone),

@@ -341,18 +341,22 @@ def _display_data_list(events: List[Event], list_filter: EventFilter):
     table.add_column("Fin", width=16)
     table.add_column("Lieu", min_width=15)
     table.add_column("Participants", width=12, justify="right")
-    table.add_column("Support", width=8, justify="center")
+    table.add_column("Client ID", width=12, justify="right")
+    table.add_column("Contact ID", width=12, justify="right")
+    table.add_column("Contact support ID", width=8, justify="right")
 
     for event in events:
         support = f"#{event.support_contact_id}" if event.support_contact_id else Text("-", style="dim")
 
         table.add_row(
-            str(event.id or "-"),
+            str(event.id),
             event.name,
             event.start_date.strftime("%d/%m/%Y %H:%M"),
             event.end_date.strftime("%d/%m/%Y %H:%M"),
             event.location,
             str(event.attendees),
+            str(event.client_id),
+            str(event.contrat_id),
             support
         )
     console.print(f"\nTotal: [dim]{len(events)} événement(s)[/dim]")

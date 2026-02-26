@@ -362,7 +362,7 @@ def _display_data_list(contrats: List[Contrat], list_filter: ContratFilter):
     for contrat in contrats:
 
         table.add_row(
-            str(contrat.id or "-"),
+            str(contrat.id),
             str(contrat.client_id),
             str(contrat.commercial_contact_id),
             str(contrat.contrat_amount),
