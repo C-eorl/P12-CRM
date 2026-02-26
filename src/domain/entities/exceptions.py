@@ -2,9 +2,6 @@
 #                       Exception métier                             #
 ######################################################################
 
-class PermissionError(Exception):
-    pass
-
 class InvalidAmountError(Exception):
     pass
 
