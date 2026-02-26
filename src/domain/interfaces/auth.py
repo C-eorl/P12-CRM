@@ -1,8 +1,6 @@
 """Authentication interfaces for Epic Events CRM"""
 from typing import Optional, Protocol
 
-from src.domain.entities.entities import User
-
 
 class PasswordHasherInterface(Protocol):
     """
@@ -26,15 +24,3 @@ class TokenManagerInterface(Protocol):
     def create_token(self, user_id: int) -> str: ...
 
     def decode_token(self, token: str) -> Optional[dict]: ...
-
-
-class AuthServiceInterface(Protocol):
-    """
-    Interface for authentification service
-    - authenticate : Authenticate a user and return token
-    - get_current_user : Get current user from token
-    """
-
-    def authenticate(self, email: str, password: str) -> Optional[str]: ...
-
-    def get_current_user(self, token: str) -> Optional[User]: ...
