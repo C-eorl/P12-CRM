@@ -1,10 +1,11 @@
 import os
 
 import psycopg2
+from dotenv import load_dotenv
 from psycopg2 import sql
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
-from dotenv import load_dotenv
+
 from src.infrastructures.database.models import Base
 
 load_dotenv()
@@ -30,34 +31,15 @@ def init_engine(force=False):
     _engine = create_engine(database_url)
     _SessionLocal = sessionmaker(bind=_engine)
 
-def get_engine():
-    """
-    Get a database engine instance or create it if it doesn't exist
-    :return:
-    """
-    if _engine is None:
-        init_engine()
-    return _engine
-
-
 def init_db():
     """
     Initialize the table database
     :return:
     """
     engine = get_engine() if _engine else None
-    init_engine(force=True)   # Force la recréation avec la nouvelle URL
+    init_engine(force=True)
     engine = get_engine()
     Base.metadata.create_all(engine)
-
-def get_session() -> Session:
-    """
-    Get a database session
-    :return: Session
-    """
-    if _SessionLocal is None:
-        init_engine()
-    return _SessionLocal()
 
 def init_postgresql(user, password, db_name):
     """
@@ -97,3 +79,21 @@ def init_postgresql(user, password, db_name):
             return True
     except Exception as e:
         raise e
+
+def get_engine():
+    """
+    Get a database engine instance or create it if it doesn't exist
+    :return:
+    """
+    if _engine is None:
+        init_engine()
+    return _engine
+
+def get_session() -> Session:
+    """
+    Get a database session
+    :return: Session
+    """
+    if _SessionLocal is None:
+        init_engine()
+    return _SessionLocal()
