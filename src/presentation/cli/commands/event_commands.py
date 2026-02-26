@@ -13,7 +13,7 @@ from helpers.helpers import normalize
 from src.domain.entities.entities import Event
 from src.domain.policies.user_policy import RequestPolicy, UserPolicy
 from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyEventRepository, SQLAlchemyUserRepository, \
-    SQLAlchemyContratRepository, SQLAlchemyClientRepository
+    SQLAlchemyContratRepository
 from src.use_cases.event_use_cases import ListEventUseCase, GetEventUseCase, GetEventRequest, UpdateEventUseCase, \
     UpdateEventRequest, CreateEventUseCase, CreateEventRequest, AssignSupportEventRequest, AssignSupportEventUseCase, \
     EventFilter, ListEventRequest, DeleteEventRequest, DeleteEventUseCase
@@ -124,7 +124,7 @@ def update(ctx: typer.Context, event_id: int):
     start_date = typer.prompt('Date et heure de début (2000-00-00 00:00:00) ', "", show_default=False)
     end_date = typer.prompt('Date et heure de fin (2000-00-00 00:00:00) ', "", show_default=False)
     location = typer.prompt('Emplacement ', "", show_default=False)
-    attendees = typer.prompt("Nombre de participant ", "", show_default=False)
+    attendees = typer.prompt("Nombre de participant ", 0, show_default=False)
     notes = typer.prompt("Notes ", "", show_default=False)
 
     name = normalize(name)
@@ -138,7 +138,7 @@ def update(ctx: typer.Context, event_id: int):
         start_date=datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S") if start_date != "" else None,
         end_date=datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S") if end_date != "" else None,
         location=location,
-        attendees=int(attendees),
+        attendees=int(attendees) if attendees is not None else None,
         notes=notes,
         authorization=policy
     )
