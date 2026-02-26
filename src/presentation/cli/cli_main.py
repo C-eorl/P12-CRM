@@ -40,7 +40,7 @@ def main(ctx: typer.Context):
     if ctx.obj["current_user"] is None:
 
         if ctx.invoked_subcommand not in ["auth"]:
-            error_display("Erreur Authentification", "Veuillez vous connecter via - auth login -")
+            error_display("Authentification", "Veuillez vous connecter via - auth login -")
             raise typer.Exit(1)
         if ctx.invoked_subcommand in ["auth"]:
             pass
