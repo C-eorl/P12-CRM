@@ -9,7 +9,7 @@ from rich.text import Text
 
 from helpers.helper_cli import error_display
 from helpers.helpers import normalize
-from src.domain.entities.entities import Contrat
+from src.domain.entities.entities import Contrat, Client
 from src.domain.entities.value_objects import Money
 from src.domain.policies.user_policy import RequestPolicy, UserPolicy
 from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyContratRepository, \
@@ -18,6 +18,7 @@ from src.use_cases.contrat_use_cases import CreateContratRequest, CreateContratU
     UpdateContratUseCase, GetContratRequest, GetContratUseCase, ListContratUseCase, SignContratRequest, \
     SignContratUseCase, RecordPaymentContratRequest, RecordPaymentContratUseCase, ContratFilter, ListContratRequest, \
     DeleteContratUseCase, DeleteContratRequest
+
 
 contrat_app = typer.Typer()
 console = Console()
@@ -58,7 +59,7 @@ def create(
     :param contrat_amount: amount of the contrat
     :return: None
     """
-    repo = SQLAlchemyContratRepository(ctx.obj["session"])
+    contrat_repo = SQLAlchemyContratRepository(ctx.obj["session"])
     client_repo = SQLAlchemyClientRepository(ctx.obj["session"])
     user_repo = SQLAlchemyUserRepository(ctx.obj["session"])
 
@@ -74,7 +75,7 @@ def create(
     if not user_commercial.is_commercial():
         error_display("Ressource", "L'utilisateur selectionné n'est pas du département commercial")
         raise typer.Exit(1)
-    use_case = CreateContratUseCase(repo)
+    use_case = CreateContratUseCase(contrat_repo, client_repo)
 
     policy = RequestPolicy(
         user=ctx.obj["current_user"],
@@ -92,7 +93,7 @@ def create(
 
     if response.success:
         console.print(f"\n[bold]Contrat #{response.contrat.id} créé[/bold]\n")
-        _display_data(response.contrat)
+        _display_data(response.contrat, response.client)
     else:
         error_display(response.error, response.msg)
 
@@ -105,11 +106,12 @@ def update(ctx: typer.Context, contrat_id: int):
     :param contrat_id: ID contrat
     :return: None
     """
-    repo = SQLAlchemyContratRepository(ctx.obj["session"])
-    use_case = UpdateContratUseCase(repo)
+    contrat_repo = SQLAlchemyContratRepository(ctx.obj["session"])
+    client_repo = SQLAlchemyClientRepository(ctx.obj["session"])
+    use_case = UpdateContratUseCase(contrat_repo, client_repo)
 
     #verification ressource existe
-    contrat = repo.find_by_id(contrat_id)
+    contrat = contrat_repo.find_by_id(contrat_id)
     if not contrat:
         error_display("Ressource", "Contrat non trouvé")
         raise typer.Exit()
@@ -137,7 +139,7 @@ def update(ctx: typer.Context, contrat_id: int):
 
     if response.success:
         console.print(f"\n[bold]Contrat #{response.contrat.id} modifié[/bold]\n")
-        _display_data(response.contrat)
+        _display_data(response.contrat, response.client)
     else:
         error_display(response.error, response.msg)
 
@@ -150,10 +152,11 @@ def show(ctx: typer.Context, contrat_id: int):
     :param contrat_id: ID contrat
     :return: None
     """
-    repo = SQLAlchemyContratRepository(ctx.obj["session"])
-    use_case = GetContratUseCase(repo)
+    contrat_repo = SQLAlchemyContratRepository(ctx.obj["session"])
+    client_repo = SQLAlchemyClientRepository(ctx.obj["session"])
+    use_case = GetContratUseCase(contrat_repo, client_repo)
 
-    if not repo.exist(contrat_id):
+    if not contrat_repo.exist(contrat_id):
         error_display("Ressource", "Contrat non trouvé")
         raise typer.Exit()
 
@@ -163,7 +166,7 @@ def show(ctx: typer.Context, contrat_id: int):
     response = use_case.execute(request)
 
     if response.success:
-        _display_data(response.contrat)
+        _display_data(response.contrat, response.client)
     else:
         error_display(response.error, response.msg)
 
@@ -306,7 +309,7 @@ def delete(ctx: typer.Context, contrat_id: int):
     else:
         error_display(response.error, response.msg)
 
-def _display_data(contrat: Contrat):
+def _display_data(contrat: Contrat, client: Client):
     """ Display data of Contrat """
 
     content = Text()
@@ -315,16 +318,19 @@ def _display_data(contrat: Contrat):
     content.append(f"{contrat.id or 'N/A'}\n")
 
     content.append(f"Client: ", style="bold cyan")
-    content.append(f"{contrat.client_id}\n")
+    content.append(f"# {contrat.client_id} - {client.fullname}\n")
 
     content.append(f"Contact commercial: ", style="bold cyan")
-    content.append(f"{contrat.commercial_contact_id}\n")
+    content.append(f"# {contrat.commercial_contact_id}\n")
 
     content.append(f"Montant du contrat: ", style="bold cyan")
     content.append(f"{contrat.contrat_amount}\n")
 
     content.append(f"Somme restante: ", style="bold cyan")
     content.append(f"{contrat.balance_due}\n")
+
+    content.append(f"Date de création: ", style="bold cyan")
+    content.append(f"{contrat.created_at.strftime('%d/%m/%Y %H:%M')}\n")
 
     content.append(f"Status: ", style="bold cyan")
     content.append(f"{contrat.status.name}\n")

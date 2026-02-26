@@ -9,9 +9,9 @@ from rich.text import Text
 
 from helpers.helper_cli import error_display
 from helpers.helpers import normalize
-from src.domain.entities.entities import Client
+from src.domain.entities.entities import Client, User
 from src.domain.policies.user_policy import RequestPolicy, UserPolicy
-from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyClientRepository
+from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyClientRepository, SQLAlchemyUserRepository
 from src.use_cases.client_use_cases import GetClientUseCase, GetClientRequest, CreateClientRequest, CreateClientUseCase, \
     ListClientUseCase, UpdateClientRequest, UpdateClientUseCase, DeleteClientUseCase, DeleteClientRequest, \
     ListClientRequest, ClientFilter
@@ -74,14 +74,15 @@ def create(
     )
 
     # Use case
-    repo = SQLAlchemyClientRepository(ctx.obj["session"])
-    use_case = CreateClientUseCase(repo)
+    client_repo = SQLAlchemyClientRepository(ctx.obj["session"])
+    user_repo = SQLAlchemyUserRepository(ctx.obj["session"])
+    use_case = CreateClientUseCase(client_repo, user_repo)
     response = use_case.execute(request)
 
     # Affichage selon response.success
     if response.success:
         console.print(f"\n[bold]Client #{response.client.id} créé[/bold]\n")
-        _display_data(response.client)
+        _display_data(response.client, response.user)
     else:
         error_display(response.error, response.msg)
 
@@ -94,11 +95,12 @@ def update(ctx: typer.Context, client_id: int):
     :return: None
     """
     # init
-    repo = SQLAlchemyClientRepository(ctx.obj["session"])
-    use_case = UpdateClientUseCase(repo)
+    client_repo = SQLAlchemyClientRepository(ctx.obj["session"])
+    user_repository = SQLAlchemyUserRepository(ctx.obj["session"])
+    use_case = UpdateClientUseCase(client_repo, user_repository)
 
     #verification ressource existe
-    client = repo.find_by_id(client_id)
+    client = client_repo.find_by_id(client_id)
     if not client:
         error_display("Ressource","Client non trouvé")
         raise typer.Exit(1)
@@ -137,7 +139,7 @@ def update(ctx: typer.Context, client_id: int):
 
     if response.success:
         console.print(f"\n[bold]Client #{response.client.id} modifié[/bold]\n")
-        _display_data(response.client)
+        _display_data(response.client, response.user)
     else:
         error_display(response.error, response.msg)
 
@@ -150,11 +152,12 @@ def show(ctx: typer.Context, client_id: int):
     :param client_id: ID of client
     :return: None
     """
-    repo = SQLAlchemyClientRepository(ctx.obj["session"])
-    use_case = GetClientUseCase(repo)
+    client_repo = SQLAlchemyClientRepository(ctx.obj["session"])
+    user_repo = SQLAlchemyUserRepository(ctx.obj["session"])
+    use_case = GetClientUseCase(client_repo, user_repo)
 
     # verification ressource existante
-    if not repo.exist(client_id):
+    if not client_repo.exist(client_id):
         error_display("Ressource", "Client non trouvé")
         raise typer.Exit()
 
@@ -164,7 +167,7 @@ def show(ctx: typer.Context, client_id: int):
     response = use_case.execute(request)
 
     if response.success:
-        _display_data(response.client)
+        _display_data(response.client, response.user)
     else:
         error_display(response.error, response.msg)
 
@@ -233,7 +236,7 @@ def delete(ctx: typer.Context, client_id: int, ):
     else:
         error_display(response.error, response.msg)
 
-def _display_data(client: Client):
+def _display_data(client: Client, user: User):
     """ Display data of Client """
 
     content = Text()
@@ -251,7 +254,13 @@ def _display_data(client: Client):
     content.append(f"{client.company_name}\n")
 
     content.append(f"Contact commercial: ", style="bold cyan")
-    content.append(f"{client.commercial_contact_id}\n")
+    content.append(f"# {client.commercial_contact_id} - {user.fullname}\n")
+
+    content.append(f"Date de création: ", style="bold cyan")
+    content.append(f"{client.created_at.strftime('%d/%m/%Y %H:%M')}\n")
+
+    content.append(f"Dernière mise à jour: ", style="bold cyan")
+    content.append(f"{client.updated_at.strftime('%d/%m/%Y %H:%M')}\n")
 
     panel = Panel(
         content,

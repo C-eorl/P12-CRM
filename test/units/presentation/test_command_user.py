@@ -26,13 +26,14 @@ def test_user_create(make_context):
             "Jean Support\n"
             "support@test.fr\n"
             "password123\n"
+            "password123\n"
             "SUPPORT\n"
         ),
         obj=make_context,
     )
 
-    assert result.exit_code == 0
     assert "créé" in result.output
+    assert result.exit_code == 0
 
 
 def test_user_create_invalid_role(make_context):
@@ -114,6 +115,7 @@ def test_user_delete_valid(make_context):
         input=(
             "Temp User\n"
             "temp@test.fr\n"
+            "password\n"
             "password\n"
             "SUPPORT\n"
         ),

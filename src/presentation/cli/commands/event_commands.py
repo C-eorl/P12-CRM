@@ -10,10 +10,10 @@ from rich.text import Text
 
 from helpers.helper_cli import error_display
 from helpers.helpers import normalize
-from src.domain.entities.entities import Event
+from src.domain.entities.entities import Event, Client
 from src.domain.policies.user_policy import RequestPolicy, UserPolicy
 from src.infrastructures.repositories.SQLAchemy_repository import SQLAlchemyEventRepository, SQLAlchemyUserRepository, \
-    SQLAlchemyContratRepository
+    SQLAlchemyContratRepository, SQLAlchemyClientRepository
 from src.use_cases.event_use_cases import ListEventUseCase, GetEventUseCase, GetEventRequest, UpdateEventUseCase, \
     UpdateEventRequest, CreateEventUseCase, CreateEventRequest, AssignSupportEventRequest, AssignSupportEventUseCase, \
     EventFilter, ListEventRequest, DeleteEventRequest, DeleteEventUseCase
@@ -84,12 +84,13 @@ def create(
     )
     event_repo = SQLAlchemyEventRepository(ctx.obj["session"])
     contrat_repo = SQLAlchemyContratRepository(ctx.obj["session"])
-    use_case = CreateEventUseCase(event_repo, contrat_repo)
+    client_repo  =SQLAlchemyClientRepository(ctx.obj["session"])
+    use_case = CreateEventUseCase(event_repo, contrat_repo, client_repo)
     response = use_case.execute(request)
 
     if response.success:
         console.print(f"\n[bold]Evènement #{response.event.id} créé[/bold]\n")
-        _display_data(response.event)
+        _display_data(response.event, response.client)
     else:
         error_display(response.error, response.msg)
 
@@ -102,10 +103,11 @@ def update(ctx: typer.Context, event_id: int):
     :param event_id: ID of the event
     :return: None
     """
-    repo = SQLAlchemyEventRepository(ctx.obj["session"])
-    use_case = UpdateEventUseCase(repo)
+    event_repo = SQLAlchemyEventRepository(ctx.obj["session"])
+    client_repo = SQLAlchemyClientRepository(ctx.obj["session"])
+    use_case = UpdateEventUseCase(event_repo, client_repo)
 
-    event = repo.find_by_id(event_id)
+    event = event_repo.find_by_id(event_id)
     if not event:
         error_display("Ressource", "Evènement non trouvé")
         raise typer.Exit(1)
@@ -146,7 +148,7 @@ def update(ctx: typer.Context, event_id: int):
 
     if response.success:
         console.print(f"\n[bold]Evènement #{response.event.id} modifié[/bold]\n")
-        _display_data(response.event)
+        _display_data(response.event, response.client)
     else:
         error_display(response.error, response.msg)
 
@@ -163,12 +165,13 @@ def show(ctx: typer.Context, event_id: int):
     request = GetEventRequest(
         event_id=event_id,
     )
-    repo = SQLAlchemyEventRepository(ctx.obj["session"])
-    use_case = GetEventUseCase(repo)
+    event_repo = SQLAlchemyEventRepository(ctx.obj["session"])
+    client_repo = SQLAlchemyClientRepository(ctx.obj["session"])
+    use_case = GetEventUseCase(event_repo, client_repo)
     response = use_case.execute(request)
 
     if response.success:
-        _display_data(response.event)
+        _display_data(response.event, response.client)
     else:
         error_display(response.error, response.msg)
 
@@ -277,7 +280,7 @@ def delete(ctx: typer.Context, event_id: int):
         error_display(response.error, response.msg)
 
 
-def _display_data(event: Event):
+def _display_data(event: Event, client: Client):
     """ Display data of Event"""
 
     content = Text()
@@ -288,8 +291,11 @@ def _display_data(event: Event):
     content.append(f"\nContrat: ", style="bold cyan")
     content.append(f"#{event.contrat_id}\n")
 
-    content.append(f"Client: ", style="bold cyan")
-    content.append(f"#{event.client_id}\n")
+    content.append(f"\nClient: ", style="bold cyan")
+    content.append(f"#{event.client_id} - {client.fullname}\n")
+
+    content.append(f"Contact client: ", style="bold cyan")
+    content.append(f"{client.email} - {client.telephone}\n")
 
     content.append(f"Contact Support: ", style="bold cyan")
     support_text = f"#{event.support_contact_id}" if event.support_contact_id else "Non assigné"

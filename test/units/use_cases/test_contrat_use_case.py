@@ -34,10 +34,11 @@ from src.use_cases.contrat_use_cases import (
 ######################################################################
 #                            Create Contrat Use Case                 #
 ######################################################################
-def test_create_contrat(contrat_repository):
+def test_create_contrat(contrat_repository, client_repository):
     """Test creating a new contrat via use case"""
     repo = contrat_repository
-    uc = CreateContratUseCase(repo)
+    client_repo = client_repository
+    uc = CreateContratUseCase(repo, client_repo)
 
     request = CreateContratRequest(
         client_id=1,
@@ -60,10 +61,11 @@ def test_create_contrat(contrat_repository):
     assert found is not None
     assert found.status == ContractStatus.UNSIGNED
 
-def test_create_contrat_no_gestion_user(contrat_repository):
+def test_create_contrat_no_gestion_user(contrat_repository, client_repository):
     """Test creating a contrat without gestion permission"""
     repo = contrat_repository
-    uc = CreateContratUseCase(repo)
+    client_repo = client_repository
+    uc = CreateContratUseCase(repo, client_repo)
 
     request = CreateContratRequest(
         client_id=1,
@@ -85,10 +87,11 @@ def test_create_contrat_no_gestion_user(contrat_repository):
 ######################################################################
 #                            Update Contrat Use Case                 #
 ######################################################################
-def test_update_contrat(contrat_repository):
+def test_update_contrat(contrat_repository, client_repository):
     """Test updating a contrat via use case"""
     repo = contrat_repository
-    uc = UpdateContratUseCase(repo)
+    client_repo = client_repository
+    uc = UpdateContratUseCase(repo, client_repo)
 
     request = UpdateContratRequest(
         contrat_id=2,
@@ -108,10 +111,12 @@ def test_update_contrat(contrat_repository):
     updated = repo.find_by_id(2)
     assert updated.contrat_amount.amount == 2000
 
-def test_update_contrat_not_found(contrat_repository):
+def test_update_contrat_not_found(contrat_repository, client_repository):
     """Test updating a non-existing contrat"""
     repo = contrat_repository
-    uc = UpdateContratUseCase(repo)
+    client_repo = client_repository
+    uc = UpdateContratUseCase(repo, client_repo)
+
 
     request = UpdateContratRequest(
         contrat_id=999,
@@ -128,10 +133,11 @@ def test_update_contrat_not_found(contrat_repository):
     assert isinstance(response, UpdateContratResponse)
     assert response.success is False
 
-def test_update_contrat_no_permission(contrat_repository):
+def test_update_contrat_no_permission(contrat_repository, client_repository):
     """Test updating a contrat without permission"""
     repo = contrat_repository
-    uc = UpdateContratUseCase(repo)
+    client_repo = client_repository
+    uc = UpdateContratUseCase(repo, client_repo)
 
     request = UpdateContratRequest(
         contrat_id=1,
@@ -170,10 +176,11 @@ def test_list_contrat(contrat_repository):
 ######################################################################
 #                            Get Contrat Use Case                   #
 ######################################################################
-def test_get_contrat_by_id(contrat_repository):
+def test_get_contrat_by_id(contrat_repository, client_repository):
     """Test get contrat by id"""
     repo = contrat_repository
-    uc = GetContratUseCase(repo)
+    client_repo = client_repository
+    uc = GetContratUseCase(repo, client_repo)
 
     request = GetContratRequest(contrat_id=1)
     response = uc.execute(request)
@@ -182,10 +189,11 @@ def test_get_contrat_by_id(contrat_repository):
     assert response.success is True
     assert isinstance(response.contrat, Contrat)
 
-def test_get_contrat_invalid_id(contrat_repository):
+def test_get_contrat_invalid_id(contrat_repository, client_repository):
     """Test get contrat with invalid id"""
     repo = contrat_repository
-    uc = GetContratUseCase(repo)
+    client_repo = client_repository
+    uc = GetContratUseCase(repo, client_repo)
 
     request = GetContratRequest(contrat_id=999)
     response = uc.execute(request)

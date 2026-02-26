@@ -28,8 +28,8 @@ def test_contrat_create(make_context):
         ),
         obj=make_context
     )
-    assert "créé" in result.output
     assert result.exit_code == 0
+    assert "créé" in result.output
 
 def test_contrat_create_invalid_client_id(make_context):
     result = runner.invoke(

@@ -10,10 +10,11 @@ from src.use_cases.client_use_cases import CreateClientUseCase, CreateClientRequ
 ######################################################################
 #                            Create Client Use Case                  #
 ######################################################################
-def test_create_client (client_repository):
+def test_create_client (client_repository, user_repository):
     """Test creating a new client via use case"""
     repo = client_repository
-    client_create_UC = CreateClientUseCase(repo)
+    user_repo = user_repository
+    client_create_UC = CreateClientUseCase(repo, user_repo)
     request = CreateClientRequest(
         fullname="test",
         email="test@mail.fr",
@@ -34,10 +35,11 @@ def test_create_client (client_repository):
     found_client = repo.find_by_id(3)
     assert response.client.id == found_client.id
 
-def test_create_no_commercial_user(client_repository):
+def test_create_no_commercial_user(client_repository, user_repository):
     """Test creating a new client via use case with no commercial user"""
     repo = client_repository
-    client_create_UC = CreateClientUseCase(repo)
+    user_repo = user_repository
+    client_create_UC = CreateClientUseCase(repo, user_repo)
     request = CreateClientRequest(
         fullname="test",
         email="test@mail.fr",
@@ -55,10 +57,11 @@ def test_create_no_commercial_user(client_repository):
     assert isinstance(response, CreateClientResponse)
     assert response.success is False
 
-def test_create_invalid_data(client_repository):
+def test_create_invalid_data(client_repository, user_repository):
     """Test creating a new client via use case with invalid data"""
     repo = client_repository
-    client_create_UC = CreateClientUseCase(repo)
+    user_repo = user_repository
+    client_create_UC = CreateClientUseCase(repo, user_repo)
     request = CreateClientRequest(
         fullname="test",
         email="test@",
@@ -80,10 +83,11 @@ def test_create_invalid_data(client_repository):
 #                            Update Client Use Case                  #
 ######################################################################
 
-def test_update_client(client_repository):
+def test_update_client(client_repository, user_repository):
     """Test updated a client via use case"""
     repo = client_repository
-    client_update_UC = UpdateClientUseCase(repo)
+    user_repo = user_repository
+    client_update_UC = UpdateClientUseCase(repo, user_repo)
     request = UpdateClientRequest(
         client_id=1,
         fullname="modified fullname",
@@ -105,10 +109,11 @@ def test_update_client(client_repository):
     found_client = repo.find_by_id(1)
     assert found_client.fullname == "modified fullname"
 
-def test_update_client_invalid_data(client_repository):
+def test_update_client_invalid_data(client_repository, user_repository):
     """Test update a client via use case with invalid data"""
     repo = client_repository
-    client_update_UC = UpdateClientUseCase(repo)
+    user_repo = user_repository
+    client_update_UC = UpdateClientUseCase(repo, user_repo)
     request = UpdateClientRequest(
         client_id=1,
         fullname=None,
@@ -127,10 +132,11 @@ def test_update_client_invalid_data(client_repository):
     assert isinstance(response, UpdateClientResponse)
     assert response.success is False
 
-def test_update_client_no_commercial(user_gestion, client_repository):
+def test_update_client_no_commercial(user_gestion, client_repository, user_repository):
     """Test update a client via use case with no commercial user"""
     repo = client_repository
-    client_update_UC = UpdateClientUseCase(repo)
+    user_repo = user_repository
+    client_update_UC = UpdateClientUseCase(repo, user_repo)
     request = UpdateClientRequest(
         client_id=1,
         fullname=None,
@@ -149,10 +155,11 @@ def test_update_client_no_commercial(user_gestion, client_repository):
     assert isinstance(response, UpdateClientResponse)
     assert response.success is False
 
-def test_update_client_no_associe_commercial(user_commercial2, client_repository):
+def test_update_client_no_associe_commercial(user_commercial2, client_repository, user_repository):
     """Test update a client via use case with no commercial user"""
     repo = client_repository
-    client_update_UC = UpdateClientUseCase(repo)
+    user_repo = user_repository
+    client_update_UC = UpdateClientUseCase(repo, user_repo)
     request = UpdateClientRequest(
         client_id=1,
         fullname=None,
@@ -194,10 +201,11 @@ def test_get_list_client(user_commercial, client_repository):
 #                            Get by id Client Use Case                  #
 ######################################################################
 
-def test_get_client_by_id(user_commercial, client_repository):
+def test_get_client_by_id(user_commercial, client_repository, user_repository):
     """Test getting a client by id via use case"""
     repo = client_repository
-    client_get_UC = GetClientUseCase(repo)
+    user_repo = user_repository
+    client_get_UC = GetClientUseCase(repo, user_repo)
     request = GetClientRequest(
         client_id=1,
     )
@@ -207,10 +215,11 @@ def test_get_client_by_id(user_commercial, client_repository):
     assert response.success is True
     assert isinstance(response.client, Client)
 
-def test_get_client_by_invalid_id(user_commercial, client_repository):
+def test_get_client_by_invalid_id(user_commercial, client_repository, user_repository):
     """Test getting a client by invalid id via use case"""
     repo = client_repository
-    client_get_UC = GetClientUseCase(repo)
+    user_repo = user_repository
+    client_get_UC = GetClientUseCase(repo, user_repo)
     request = GetClientRequest(
         client_id=456,
     )

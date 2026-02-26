@@ -2,10 +2,10 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, List
 
-from src.domain.entities.entities import Client
+from src.domain.entities.entities import Client, User
 from src.domain.entities.exceptions import ValidationError, InvalidEmailError, InvalidPhoneError
 from src.domain.entities.value_objects import Email, Telephone
-from src.domain.interfaces.repository import ClientRepository
+from src.domain.interfaces.repository import ClientRepository, UserRepository
 from src.domain.policies.user_policy import UserPolicy, RequestPolicy
 
 
@@ -25,6 +25,7 @@ class CreateClientResponse:
     """Response to create a new client"""
     success: bool
     client: Optional[Client] = None
+    user: Optional[User] = None
     error: Optional[str] = None
     msg: Optional[str] = None
 
@@ -32,8 +33,9 @@ class CreateClientResponse:
 class CreateClientUseCase:
     """Use case for creating a new client"""
 
-    def __init__(self, client_repository: ClientRepository):
+    def __init__(self, client_repository: ClientRepository, user_repository: UserRepository):
         self.repository = client_repository
+        self.user_repository = user_repository
 
     def execute(self, request: CreateClientRequest) -> CreateClientResponse:
 
@@ -65,8 +67,9 @@ class CreateClientUseCase:
             commercial_contact_id=request.authorization.user["user_current_id"])
 
         saved_client = self.repository.save(client)
+        user = self.user_repository.find_by_id(saved_client.commercial_contact_id)
 
-        return CreateClientResponse(success=True, client=saved_client)
+        return CreateClientResponse(success=True, client=saved_client, user=user)
 
 ################################################################################################
 @dataclass
@@ -83,6 +86,7 @@ class UpdateClientRequest:
 class UpdateClientResponse:
     success: bool
     client: Optional[Client] = None
+    user: Optional[User] = None
     error: Optional[str] = None
     msg: Optional[str] = None
 
@@ -91,8 +95,9 @@ class UpdateClientUseCase:
     """
     Use case for updating associated client.
     """
-    def __init__(self, client_repository: ClientRepository):
+    def __init__(self, client_repository: ClientRepository, user_repository: UserRepository):
         self.repository = client_repository
+        self.user_repository = user_repository
 
     def execute(self, request: UpdateClientRequest):
         # Permission liée au role
@@ -150,8 +155,9 @@ class UpdateClientUseCase:
         )
 
         updated_client = self.repository.save(client)
+        user = self.user_repository.find_by_id(updated_client.commercial_contact_id)
 
-        return UpdateClientResponse(success=True, client=updated_client)
+        return UpdateClientResponse(success=True, client=updated_client, user=user)
 
 
 #############################################################################
@@ -200,13 +206,15 @@ class GetClientRequest:
 class GetClientResponse:
     success: bool
     client: Optional[Client] = None
+    user: Optional[User] = None
     error: Optional[str] = None
     msg: Optional[str] = None
 
 
 class GetClientUseCase:
-    def __init__(self, client_repository: ClientRepository):
+    def __init__(self, client_repository: ClientRepository, user_repository: UserRepository):
         self.repository = client_repository
+        self.user_repository = user_repository
 
     def execute(self, request: GetClientRequest):
         client = self.repository.find_by_id(request.client_id)
@@ -217,8 +225,8 @@ class GetClientUseCase:
                 error="Ressource",
                 msg=f"Client non trouvé"
             )
-
-        return GetClientResponse(success=True, client=client)
+        user = self.user_repository.find_by_id(client.commercial_contact_id)
+        return GetClientResponse(success=True, client=client, user=user)
 
 
 ##############################################################################

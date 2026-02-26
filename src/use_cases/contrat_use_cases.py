@@ -2,11 +2,11 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, List
 
-from src.domain.entities.entities import Contrat
+from src.domain.entities.entities import Contrat, Client
 from src.domain.entities.enums import ContractStatus
 from src.domain.entities.exceptions import BusinessRuleViolation
 from src.domain.entities.value_objects import Money
-from src.domain.interfaces.repository import ContratRepository
+from src.domain.interfaces.repository import ContratRepository, ClientRepository
 from src.domain.policies.user_policy import UserPolicy, RequestPolicy
 
 
@@ -22,6 +22,7 @@ class CreateContratRequest:
 class CreateContratResponse:
     success: bool
     contrat: Optional[Contrat] = None
+    client: Optional[Client] = None
     error: Optional[str] = None
     msg: Optional[str] = None
 
@@ -29,8 +30,9 @@ class CreateContratResponse:
 class CreateContratUseCase:
     """Use case for creating a new contrat"""
 
-    def __init__(self, contrat_repository: ContratRepository):
+    def __init__(self, contrat_repository: ContratRepository, client_repository: ClientRepository):
         self.repository = contrat_repository
+        self.client_repository = client_repository
 
     def execute(self, request: CreateContratRequest) -> CreateContratResponse:
 
@@ -59,7 +61,8 @@ class CreateContratUseCase:
         )
 
         saved_contrat = self.repository.save(contrat)
-        return CreateContratResponse(success=True, contrat=saved_contrat)
+        client = self.client_repository.find_by_id(saved_contrat.client_id)
+        return CreateContratResponse(success=True, contrat=saved_contrat, client=client)
 
 
 ##############################################################################
@@ -74,6 +77,7 @@ class UpdateContratRequest:
 class UpdateContratResponse:
     success: bool
     contrat: Optional[Contrat] = None
+    client: Optional[Client] = None
     error: Optional[str] = None
     msg: Optional[str] = None
 
@@ -81,8 +85,9 @@ class UpdateContratResponse:
 class UpdateContratUseCase:
     """Use case for updating a contrat"""
 
-    def __init__(self, contrat_repository: ContratRepository):
+    def __init__(self, contrat_repository: ContratRepository, client_repository: ClientRepository):
         self.repository = contrat_repository
+        self.client_repository = client_repository
 
     def execute(self, request: UpdateContratRequest) -> UpdateContratResponse:
 
@@ -114,7 +119,8 @@ class UpdateContratUseCase:
         )
 
         updated_contrat = self.repository.save(contrat)
-        return UpdateContratResponse(success=True, contrat=updated_contrat)
+        client = self.client_repository.find_by_id(updated_contrat.client_id)
+        return UpdateContratResponse(success=True, contrat=updated_contrat, client=client)
 
 
 ##############################################################################
@@ -181,6 +187,7 @@ class GetContratRequest:
 class GetContratResponse:
     success: bool
     contrat: Optional[Contrat] = None
+    client: Optional[Client] = None
     error: Optional[str] = None
     msg: Optional[str] = None
 
@@ -188,8 +195,9 @@ class GetContratResponse:
 class GetContratUseCase:
     """Use case for retrieving a contrat"""
 
-    def __init__(self, contrat_repository: ContratRepository):
+    def __init__(self, contrat_repository: ContratRepository, client_repository: ClientRepository):
         self.repository = contrat_repository
+        self.client_repository = client_repository
 
     def execute(self, request: GetContratRequest) -> GetContratResponse:
         contrat = self.repository.find_by_id(request.contrat_id)
@@ -199,8 +207,8 @@ class GetContratUseCase:
                 error="Ressource",
                 msg="Contrat non trouvé"
             )
-
-        return GetContratResponse(success=True, contrat=contrat)
+        client = self.client_repository.find_by_id(contrat.client_id)
+        return GetContratResponse(success=True, contrat=contrat, client=client)
 
 
 ##############################################################################

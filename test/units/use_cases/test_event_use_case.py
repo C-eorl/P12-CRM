@@ -12,11 +12,12 @@ from src.use_cases.event_use_cases import CreateEventUseCase, CreateEventRequest
 ######################################################################
 #                            Create Contrat Use Case                 #
 ######################################################################
-def test_create_event(event_repository, contrat_repository):
+def test_create_event(event_repository, contrat_repository, client_repository):
     """Test creating a new contrat via use case"""
     repo = event_repository
     contrat_repo = contrat_repository
-    uc = CreateEventUseCase(repo, contrat_repo)
+    client_repo = client_repository
+    uc = CreateEventUseCase(repo, contrat_repo, client_repo)
 
     request = CreateEventRequest(
         name = "ttes",
@@ -42,11 +43,12 @@ def test_create_event(event_repository, contrat_repository):
     found = repo.find_by_id(response.event.id)
     assert found is not None
 
-def test_create_event_no_commercial_user(event_repository, contrat_repository):
+def test_create_event_no_commercial_user(event_repository, contrat_repository, client_repository):
     """Test creating a contrat without gestion permission"""
     repo = event_repository
     contrat_repo = contrat_repository
-    uc = CreateEventUseCase(repo, contrat_repo)
+    client_repo = client_repository
+    uc = CreateEventUseCase(repo, contrat_repo, client_repo)
 
     request = CreateEventRequest(
         name="ttes",
@@ -72,10 +74,11 @@ def test_create_event_no_commercial_user(event_repository, contrat_repository):
 ######################################################################
 #                            Update Contrat Use Case                 #
 ######################################################################
-def test_update_event(event_repository):
+def test_update_event(event_repository, client_repository):
     """Test updating a contrat via use case"""
     repo = event_repository
-    uc = UpdateEventUseCase(repo)
+    client_repo = client_repository
+    uc = UpdateEventUseCase(repo, client_repo)
 
     request = UpdateEventRequest(
         event_id=1,
@@ -100,10 +103,11 @@ def test_update_event(event_repository):
     updated = repo.find_by_id(1)
     assert updated.name == "update event"
 
-def test_update_contrat_not_found(event_repository):
+def test_update_contrat_not_found(event_repository, client_repository):
     """Test updating a non-existing contrat"""
     repo = event_repository
-    uc = UpdateEventUseCase(repo)
+    client_repo = client_repository
+    uc = UpdateEventUseCase(repo, client_repo)
 
     request = UpdateEventRequest(
         event_id=1150,
@@ -125,10 +129,11 @@ def test_update_contrat_not_found(event_repository):
     assert isinstance(response, UpdateEventResponse)
     assert response.success is False
 
-def test_update_event_no_permission(event_repository):
+def test_update_event_no_permission(event_repository, client_repository):
     """Test updating a contrat without permission"""
     repo = event_repository
-    uc = UpdateEventUseCase(repo)
+    client_repo = client_repository
+    uc = UpdateEventUseCase(repo, client_repo)
 
     request = UpdateEventRequest(
         event_id=1,
@@ -172,10 +177,11 @@ def test_list_event(event_repository):
 ######################################################################
 #                            Get Contrat Use Case                   #
 ######################################################################
-def test_get_event_by_id(event_repository):
+def test_get_event_by_id(event_repository, client_repository):
     """Test get contrat by id"""
     repo = event_repository
-    uc = GetEventUseCase(repo)
+    client_repo = client_repository
+    uc = GetEventUseCase(repo, client_repo)
 
     request = GetEventRequest(event_id=1)
     response = uc.execute(request)
@@ -184,10 +190,11 @@ def test_get_event_by_id(event_repository):
     assert response.success is True
     assert isinstance(response.event, Event)
 
-def test_get_event_invalid_id(event_repository):
+def test_get_event_invalid_id(event_repository, client_repository):
     """Test get contrat with invalid id"""
     repo = event_repository
-    uc = GetEventUseCase(repo)
+    client_repo = client_repository
+    uc = GetEventUseCase(repo, client_repo)
 
     request = GetEventRequest(event_id=1450)
     response = uc.execute(request)

@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, List
 
-from src.domain.entities.entities import Event
+from src.domain.entities.entities import Event, Client
 from src.domain.interfaces.repository import EventRepository, UserRepository, ContratRepository, ClientRepository
 from src.domain.policies.user_policy import UserPolicy, RequestPolicy
 
@@ -25,6 +25,7 @@ class CreateEventRequest:
 class CreateEventResponse:
     success: bool
     event: Optional[Event] = None
+    client: Optional[Client] = None
     error: Optional[str] = None
     msg: Optional[str] = None
 
@@ -35,9 +36,11 @@ class CreateEventUseCase:
     def __init__(
             self, event_repository: EventRepository,
             contrat_repository: ContratRepository,
+            client_repository: ClientRepository,
     ):
         self.event_repository = event_repository
         self.contrat_repository = contrat_repository
+        self.client_repository = client_repository
 
     def execute(self, request: CreateEventRequest) -> CreateEventResponse:
 
@@ -107,7 +110,8 @@ class CreateEventUseCase:
         )
 
         saved_event = self.event_repository.save(event)
-        return CreateEventResponse(success=True, event=saved_event)
+        client = self.client_repository.find_by_id(client_id)
+        return CreateEventResponse(success=True, event=saved_event, client=client)
 
 
 ##############################################################################
@@ -127,6 +131,7 @@ class UpdateEventRequest:
 class UpdateEventResponse:
     success: bool
     event: Optional[Event] = None
+    client: Optional[Client] = None
     error: Optional[str] = None
     msg: Optional[str] = None
 
@@ -134,8 +139,9 @@ class UpdateEventResponse:
 class UpdateEventUseCase:
     """Use case for updating a contrat"""
 
-    def __init__(self, event_repository: EventRepository):
+    def __init__(self, event_repository: EventRepository, client_repository: ClientRepository):
         self.repository = event_repository
+        self.client_repository = client_repository
 
     def execute(self, request: UpdateEventRequest) -> UpdateEventResponse:
 
@@ -166,7 +172,8 @@ class UpdateEventUseCase:
         )
 
         updated_event = self.repository.save(event)
-        return UpdateEventResponse(success=True, event=updated_event)
+        client = self.client_repository.find_by_id(event.client_id)
+        return UpdateEventResponse(success=True, event=updated_event, client=client)
 
 
 ##############################################################################
@@ -224,6 +231,7 @@ class GetEventRequest:
 class GetEventResponse:
     success: bool
     event: Optional[Event] = None
+    client: Optional[Client] = None
     error: Optional[str] = None
     msg: Optional[str] = None
 
@@ -231,8 +239,9 @@ class GetEventResponse:
 class GetEventUseCase:
     """Use case for retrieving a contrat"""
 
-    def __init__(self, event_repository: EventRepository):
+    def __init__(self, event_repository: EventRepository, client_repository: ClientRepository):
         self.repository = event_repository
+        self.client_repository = client_repository
 
     def execute(self, request: GetEventRequest) -> GetEventResponse:
         event = self.repository.find_by_id(request.event_id)
@@ -242,8 +251,8 @@ class GetEventUseCase:
                 error="Ressource",
                 msg="Evenement non trouvé"
             )
-
-        return GetEventResponse(success=True, event=event)
+        client = self.client_repository.find_by_id(event.client_id)
+        return GetEventResponse(success=True, event=event, client=client)
 
 
 ##############################################################################
