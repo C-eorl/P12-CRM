@@ -45,10 +45,11 @@ def permission(ctx:typer.Context):
 @user_app.command(help="Créer un utilisateur")
 def create(
         ctx: typer.Context,
-        fullname: str = typer.Option(..., prompt=True),
-        email: str = typer.Option(..., prompt=True),
-        password: str = typer.Option(..., prompt=True),
-        role: Role = typer.Option(..., prompt=True),
+        fullname: str = typer.Option(..., prompt="Nom complet"),
+        email: str = typer.Option(..., prompt="Adresse mail"),
+        password: str = typer.Option(..., prompt="Mot de passe"),
+        confirm_password: str = typer.Option(..., prompt="Confirmez Mot de passe"),
+        role: Role = typer.Option(..., prompt="Role"),
 ):
     """
     Command to create new user
@@ -59,6 +60,11 @@ def create(
     :param role: role for user
     :return: None
     """
+    if password != confirm_password:
+        error_display("Saisie", "Les mot de passe ne sont pas identiques")
+        raise typer.Exit()
+
+
     policy = RequestPolicy(
         user=ctx.obj["current_user"],
         ressource= ctx.obj["ressource"],

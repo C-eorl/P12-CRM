@@ -43,10 +43,10 @@ def permission(ctx:typer.Context):
 @client_app.command()
 def create(
         ctx: typer.Context,
-        fullname: str = typer.Option(prompt=True),
-        email: str = typer.Option(prompt=True),
-        telephone: str = typer.Option(prompt=True),
-        company_name: str = typer.Option(prompt=True),
+        fullname: str = typer.Option(prompt="Nom complet"),
+        email: str = typer.Option(prompt="Adresse mail"),
+        telephone: str = typer.Option(prompt="Numéro de téléphone"),
+        company_name: str = typer.Option(prompt="Nom de l'entreprise"),
 ):
     """
     Creates new client

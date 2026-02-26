@@ -46,9 +46,9 @@ def permission(ctx:typer.Context):
 @contrat_app.command(help="Créer un contrat")
 def create(
         ctx: typer.Context,
-        client_id : int = typer.Option(..., prompt=True),
-        commercial_contact_id: int = typer.Option(..., prompt=True),
-        contrat_amount: int = typer.Option(..., prompt=True),
+        client_id : int = typer.Option(..., prompt="ID client"),
+        commercial_contact_id: int = typer.Option(..., prompt="ID du contact commercial"),
+        contrat_amount: int = typer.Option(..., prompt="Montant du contrat"),
 ):
     """
     Command for creation client
@@ -98,7 +98,7 @@ def create(
 
 
 @contrat_app.command(help="Modifier un contrat")
-def update(ctx: typer.Context,contrat_id: int):
+def update(ctx: typer.Context, contrat_id: int):
     """
     Command for update contrat
     :param ctx: typer Context

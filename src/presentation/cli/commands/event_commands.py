@@ -46,13 +46,13 @@ def permission(ctx: typer.Context):
 @event_app.command(help="Créer un évènement")
 def create(
         ctx: typer.Context,
-        name: str = typer.Option(None, prompt=True),
-        contrat_id: int = typer.Option(None, prompt=True),
-        start_date: datetime = typer.Option(..., prompt=True),
-        end_date: datetime = typer.Option(..., prompt=True),
-        location: str = typer.Option(..., prompt=True),
-        attendees: int = typer.Option(..., prompt=True),
-        notes: str = typer.Option(..., prompt=True),
+        name: str = typer.Option(None, prompt="Nom de l'évènement"),
+        contrat_id: int = typer.Option(None, prompt="ID du contrat"),
+        start_date: datetime = typer.Option(..., prompt="Date de début"),
+        end_date: datetime = typer.Option(..., prompt="Date de fin"),
+        location: str = typer.Option(..., prompt="Adresse"),
+        attendees: int = typer.Option(..., prompt="Nombre de personne"),
+        notes: str = typer.Option(..., prompt="Notes"),
 ):
     """
     Command for create Event
