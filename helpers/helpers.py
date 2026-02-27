@@ -6,11 +6,19 @@ from src.infrastructures.security.security import TokenStore, JWTTokenManager
 
 
 def normalize(value):
+    """
+    Normalize default value
+    :param value: value to normalize
+    :return: value or None
+    """
     return value if value not in ('', 0) else None
 
 
 def get_current_user() :
-
+    """
+    Get current user via jwt token
+    :return: dict or None
+    """
     if not TokenStore.has_token():
         return None
     if TokenStore.has_expired():
@@ -30,6 +38,10 @@ def get_current_user() :
     return {"user_current_id": user.id, "user_current_role": user.role}
 
 def init_environment():
+    """
+    Initialize environment variable file
+    :return: True if initialization was successful, False otherwise
+    """
     ENV_PATH = Path(".env")
 
     DEFAULT_ENV = {
