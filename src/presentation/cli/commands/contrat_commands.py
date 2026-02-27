@@ -63,19 +63,7 @@ def create(
     client_repo = SQLAlchemyClientRepository(ctx.obj["session"])
     user_repo = SQLAlchemyUserRepository(ctx.obj["session"])
 
-    if not client_repo.exist(client_id):
-        error_display("Ressource", "Client non trouvé")
-        raise typer.Exit(1)
-
-    if not user_repo.exist(commercial_contact_id) :
-        error_display("Ressource", "Utilisateur non trouvé")
-        raise typer.Exit(1)
-
-    user_commercial = user_repo.find_by_id(commercial_contact_id)
-    if not user_commercial.is_commercial():
-        error_display("Ressource", "L'utilisateur selectionné n'est pas du département commercial")
-        raise typer.Exit(1)
-    use_case = CreateContratUseCase(contrat_repo, client_repo)
+    use_case = CreateContratUseCase(contrat_repo, client_repo, user_repo)
 
     policy = RequestPolicy(
         user=ctx.obj["current_user"],

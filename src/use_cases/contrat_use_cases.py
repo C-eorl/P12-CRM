@@ -6,7 +6,7 @@ from src.domain.entities.entities import Contrat, Client
 from src.domain.entities.enums import ContractStatus
 from src.domain.entities.exceptions import BusinessRuleViolation
 from src.domain.entities.value_objects import Money
-from src.domain.interfaces.repository import ContratRepository, ClientRepository
+from src.domain.interfaces.repository import ContratRepository, ClientRepository, UserRepository
 from src.domain.policies.user_policy import UserPolicy, RequestPolicy
 
 
@@ -30,9 +30,13 @@ class CreateContratResponse:
 class CreateContratUseCase:
     """Use case for creating a new contrat"""
 
-    def __init__(self, contrat_repository: ContratRepository, client_repository: ClientRepository):
+    def __init__(self,
+                 contrat_repository: ContratRepository,
+                 client_repository: ClientRepository,
+                 user_repository: UserRepository):
         self.repository = contrat_repository
         self.client_repository = client_repository
+        self.user_repository = user_repository
 
     def execute(self, request: CreateContratRequest) -> CreateContratResponse:
 
@@ -42,6 +46,35 @@ class CreateContratUseCase:
                 success=False,
                 error="Permission",
                 msg="Seuls les membres gestion peuvent créer des contrats"
+            )
+
+        client = self.client_repository.find_by_id(request.client_id)
+        if not client:
+            return CreateContratResponse(
+                success=False,
+                error="Ressource",
+                msg="Client non trouvé"
+            )
+        user_commercial = self.user_repository.find_by_id(request.commercial_contact_id)
+        if not user_commercial:
+            return CreateContratResponse(
+                success=False,
+                error="Ressource",
+                msg="Utilisateur non trouvé"
+            )
+
+        if not user_commercial.is_commercial():
+            return CreateContratResponse(
+                success=False,
+                error="Erreur métier",
+                msg="L'utilisateur selectionné n'est pas du département commercial"
+            )
+
+        if client.commercial_contact_id != user_commercial.id:
+            return CreateContratResponse(
+                success=False,
+                error="Erreur métier",
+                msg=f"Le client #{client.id} n'est pas associé à l'utilisateur #{user_commercial.id}"
             )
 
         if request.contrat_amount <= Money(0):
