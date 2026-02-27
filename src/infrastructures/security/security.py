@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from pathlib import Path
 from typing import Optional
 
@@ -29,7 +29,7 @@ class JWTTokenManager:
 
     def create_token(self, user_id: int) -> str:
         """Create a JWT token for user"""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         payload = {
             'user_id': user_id,
             'iat': int(now.timestamp()),
