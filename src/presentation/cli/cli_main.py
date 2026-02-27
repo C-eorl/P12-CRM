@@ -21,8 +21,6 @@ app.add_typer(contrat_app, name="contrat", help="Commandes liées aux contrats")
 app.add_typer(event_app, name="event", help="Commandes liées aux évènements")
 
 
-
-
 @app.callback()
 def main(ctx: typer.Context):
     """
@@ -51,4 +49,3 @@ def main(ctx: typer.Context):
             "role": ctx.obj["current_user"]["user_current_role"].value
         })
     ctx.call_on_close(ctx.obj["session"].close)
-

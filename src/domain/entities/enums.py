@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 ######################################################################
 #                       Enumération métier                           #
 ######################################################################
@@ -9,6 +10,7 @@ class Role(Enum):
     SUPPORT = "SUPPORT"
     GESTION = "GESTION"
     ADMIN = "ADMIN"
+
 
 class ContractStatus(Enum):
     SIGNED = "SIGNED"

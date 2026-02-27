@@ -14,7 +14,7 @@ def normalize(value):
     return value if value not in ('', 0) else None
 
 
-def get_current_user() :
+def get_current_user():
     """
     Get current user via jwt token
     :return: dict or None
@@ -36,6 +36,7 @@ def get_current_user() :
     repo = SQLAlchemyUserRepository(get_session())
     user = repo.find_by_id(payload["user_id"])
     return {"user_current_id": user.id, "user_current_role": user.role}
+
 
 def init_environment():
     """

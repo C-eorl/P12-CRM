@@ -2,6 +2,7 @@ from typing import Protocol, List, Optional
 
 from src.domain.entities.entities import Client, User, Contrat, Event
 
+
 class ClientRepository(Protocol):
     """
     Client interface

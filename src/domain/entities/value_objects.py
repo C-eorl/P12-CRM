@@ -4,6 +4,7 @@ from decimal import Decimal
 
 from src.domain.entities.exceptions import InvalidPhoneError, InvalidEmailError, InvalidAmountError
 
+
 ######################################################################
 #                       Objet métier                                 #
 ######################################################################

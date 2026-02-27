@@ -84,7 +84,7 @@ def create(
     )
     event_repo = SQLAlchemyEventRepository(ctx.obj["session"])
     contrat_repo = SQLAlchemyContratRepository(ctx.obj["session"])
-    client_repo  =SQLAlchemyClientRepository(ctx.obj["session"])
+    client_repo = SQLAlchemyClientRepository(ctx.obj["session"])
     use_case = CreateEventUseCase(event_repo, contrat_repo, client_repo)
     response = use_case.execute(request)
 

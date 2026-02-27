@@ -17,6 +17,7 @@ class UserPolicy:
     Policy object for permission user
     Request : RequestPolicy object
     """
+
     def __init__(self, request: RequestPolicy):
 
         self.permission = self.get_permission()
@@ -48,14 +49,16 @@ class UserPolicy:
         )
 
         match rule:
-            case None : return False
-            case dict() if len(rule) == 0 : return True
-            case dict() :
+            case None:
+                return False
+            case dict() if len(rule) == 0:
+                return True
+            case dict():
                 if self.request.context is None:
                     return True
                 return self.evaluation_context(rule)
-            case _ : return False
-
+            case _:
+                return False
 
     def evaluation_context(self, rule):
         """ Evaluation rule context in json permission"""

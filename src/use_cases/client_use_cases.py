@@ -59,10 +59,10 @@ class CreateClientUseCase:
             )
 
         client = Client(
-            id = None,
+            id=None,
             fullname=request.fullname,
-            email = email,
-            telephone = telephone,
+            email=email,
+            telephone=telephone,
             company_name=request.company_name,
             commercial_contact_id=request.authorization.user["user_current_id"])
 
@@ -70,6 +70,7 @@ class CreateClientUseCase:
         user = self.user_repository.find_by_id(saved_client.commercial_contact_id)
 
         return CreateClientResponse(success=True, client=saved_client, user=user)
+
 
 ################################################################################################
 @dataclass
@@ -95,6 +96,7 @@ class UpdateClientUseCase:
     """
     Use case for updating associated client.
     """
+
     def __init__(self, client_repository: ClientRepository, user_repository: UserRepository):
         self.repository = client_repository
         self.user_repository = user_repository
@@ -148,10 +150,10 @@ class UpdateClientUseCase:
             company_name = request.company_name
 
         client.update_info(
-            fullname = fullname,
-            email = email,
-            telephone = telephone,
-            company_name = company_name
+            fullname=fullname,
+            email=email,
+            telephone=telephone,
+            company_name=company_name
         )
 
         updated_client = self.repository.save(client)
@@ -164,10 +166,12 @@ class UpdateClientUseCase:
 class ClientFilter(Enum):
     MINE = "mine"
 
+
 @dataclass
 class ListClientRequest:
     user_id: int
     list_filter: Optional[ClientFilter]
+
 
 @dataclass
 class ListClientResponse:
@@ -179,6 +183,7 @@ class ListClientResponse:
 
 class ListClientUseCase:
     """Use case for listing associated clients"""
+
     def __init__(self, client_repository: ClientRepository):
         self.repository = client_repository
 
@@ -197,10 +202,12 @@ class ListClientUseCase:
             )
         return ListClientResponse(success=True, clients=all_clients)
 
+
 #############################################################################
 @dataclass
 class GetClientRequest:
     client_id: int
+
 
 @dataclass
 class GetClientResponse:

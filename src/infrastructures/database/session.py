@@ -13,6 +13,7 @@ load_dotenv()
 _engine = None
 _SessionLocal = None
 
+
 def init_engine(force=False):
     """
     Initialize the database engine
@@ -31,6 +32,7 @@ def init_engine(force=False):
     _engine = create_engine(database_url)
     _SessionLocal = sessionmaker(bind=_engine)
 
+
 def init_db():
     """
     Initialize the table database
@@ -40,6 +42,7 @@ def init_db():
     init_engine(force=True)
     engine = get_engine()
     Base.metadata.create_all(engine)
+
 
 def init_postgresql(user, password, db_name):
     """
@@ -57,7 +60,7 @@ def init_postgresql(user, password, db_name):
             host="localhost",
             port="5432",
         )
-        conn.autocommit =True
+        conn.autocommit = True
         cursor = conn.cursor()
 
         cursor.execute(
@@ -72,13 +75,14 @@ def init_postgresql(user, password, db_name):
             cursor.execute(
                 sql.SQL("CREATE DATABASE {}").format(
                     sql.Identifier(db_name)
-                    )
+                )
             )
             cursor.close()
             conn.close()
             return True
     except Exception as e:
         raise e
+
 
 def get_engine():
     """
@@ -88,6 +92,7 @@ def get_engine():
     if _engine is None:
         init_engine()
     return _engine
+
 
 def get_session() -> Session:
     """

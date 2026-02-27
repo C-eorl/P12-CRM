@@ -19,7 +19,6 @@ from src.use_cases.contrat_use_cases import CreateContratRequest, CreateContratU
     SignContratUseCase, RecordPaymentContratRequest, RecordPaymentContratUseCase, ContratFilter, ListContratRequest, \
     DeleteContratUseCase, DeleteContratRequest
 
-
 contrat_app = typer.Typer()
 console = Console()
 

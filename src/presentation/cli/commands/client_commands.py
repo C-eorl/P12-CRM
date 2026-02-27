@@ -19,8 +19,9 @@ from src.use_cases.client_use_cases import GetClientUseCase, GetClientRequest, C
 client_app = typer.Typer()
 console = Console()
 
+
 @client_app.callback()
-def permission(ctx:typer.Context):
+def permission(ctx: typer.Context):
     """Callback - verify user role """
     ctx.obj["ressource"] = "CLIENT"
 
@@ -39,6 +40,7 @@ def permission(ctx:typer.Context):
     if not policy.is_allowed():
         error_display("Permission", "Vous êtes pas authorisé à utiliser cette commande")
         raise typer.Exit(1)
+
 
 @client_app.command()
 def create(
@@ -70,7 +72,7 @@ def create(
         email=email,
         telephone=telephone,
         company_name=company_name,
-        authorization= policy,
+        authorization=policy,
     )
 
     # Use case
@@ -86,6 +88,7 @@ def create(
     else:
         error_display(response.error, response.msg)
 
+
 @client_app.command()
 def update(ctx: typer.Context, client_id: int):
     """
@@ -99,10 +102,10 @@ def update(ctx: typer.Context, client_id: int):
     user_repository = SQLAlchemyUserRepository(ctx.obj["session"])
     use_case = UpdateClientUseCase(client_repo, user_repository)
 
-    #verification ressource existe
+    # verification ressource existe
     client = client_repo.find_by_id(client_id)
     if not client:
-        error_display("Ressource","Client non trouvé")
+        error_display("Ressource", "Client non trouvé")
         raise typer.Exit(1)
 
     if client.commercial_contact_id != ctx.obj["current_user"]["user_current_id"]:
@@ -116,11 +119,10 @@ def update(ctx: typer.Context, client_id: int):
         action="update",
     )
 
-
     fullname = typer.prompt('Nom complet ', default='', show_default=False)
-    email= typer.prompt('Email ', default='',show_default=False)
-    telephone= typer.prompt('Téléphone ', default='',show_default=False)
-    company_name= typer.prompt("Nom de l'entreprise ", default='',show_default=False)
+    email = typer.prompt('Email ', default='', show_default=False)
+    telephone = typer.prompt('Téléphone ', default='', show_default=False)
+    company_name = typer.prompt("Nom de l'entreprise ", default='', show_default=False)
 
     fullname = normalize(fullname)
     email = normalize(email)
@@ -133,7 +135,7 @@ def update(ctx: typer.Context, client_id: int):
         email=email,
         telephone=telephone,
         company_name=company_name,
-        authorization= policy
+        authorization=policy
     )
     response = use_case.execute(request)
 
@@ -171,11 +173,12 @@ def show(ctx: typer.Context, client_id: int):
     else:
         error_display(response.error, response.msg)
 
+
 @client_app.command()
 def list(
         ctx: typer.Context,
         list_filter: Optional[ClientFilter] = typer.Option(
-            None, "--filter","-f",
+            None, "--filter", "-f",
             help="Filter clients (mine)",
         ),
 ):
@@ -199,6 +202,7 @@ def list(
     else:
         error_display(response.error, response.msg)
 
+
 @client_app.command()
 def delete(ctx: typer.Context, client_id: int, ):
     """
@@ -210,9 +214,9 @@ def delete(ctx: typer.Context, client_id: int, ):
     repo = SQLAlchemyClientRepository(ctx.obj["session"])
     use_case = DeleteClientUseCase(repo)
 
-    #verification ressource existe
+    # verification ressource existe
     if not repo.exist(client_id):
-        error_display("Ressource","Client non trouvé")
+        error_display("Ressource", "Client non trouvé")
         raise typer.Exit()
 
     if not typer.confirm(f"Etes-vous sure de vouloir supprimer le Client #{client_id} ?"):
@@ -226,7 +230,7 @@ def delete(ctx: typer.Context, client_id: int, ):
     )
     request = DeleteClientRequest(
         client_id=client_id,
-        authorization= policy,
+        authorization=policy,
     )
 
     response = use_case.execute(request)
@@ -235,6 +239,7 @@ def delete(ctx: typer.Context, client_id: int, ):
         console.print(f"\n[bold]Client #{client_id} supprimé[/bold]")
     else:
         error_display(response.error, response.msg)
+
 
 def _display_data(client: Client, user: User):
     """ Display data of Client """
@@ -272,6 +277,7 @@ def _display_data(client: Client, user: User):
 
     console.print(panel)
 
+
 def _display_data_list(clients: List[Client], filtre: ClientFilter):
     """
     Display clients table
@@ -293,7 +299,6 @@ def _display_data_list(clients: List[Client], filtre: ClientFilter):
     table.add_column("Contact commercial", width=12, justify="right")
 
     for client in clients:
-
         table.add_row(
             str(client.id),
             client.fullname,

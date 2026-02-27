@@ -12,4 +12,3 @@ def init_sentry():
         dsn=SENTRY_DSN,
         send_default_pii=True,
     )
-

@@ -20,8 +20,9 @@ from src.use_cases.user_use_cases import CreateUserRequest, CreateUserUseCase, U
 user_app = typer.Typer()
 console = Console()
 
+
 @user_app.callback()
-def permission(ctx:typer.Context):
+def permission(ctx: typer.Context):
     """Callback - verify user role """
     ctx.obj["ressource"] = "USER"
 
@@ -64,10 +65,9 @@ def create(
         error_display("Saisie", "Les mot de passe ne sont pas identiques")
         raise typer.Exit()
 
-
     policy = RequestPolicy(
         user=ctx.obj["current_user"],
-        ressource= ctx.obj["ressource"],
+        ressource=ctx.obj["ressource"],
         action="create",
     )
     request = CreateUserRequest(
@@ -88,6 +88,7 @@ def create(
     else:
         error_display(response.error, response.msg)
 
+
 @user_app.command(help="Modifier un utilisateur")
 def update(ctx: typer.Context, user_id: int):
     """
@@ -105,7 +106,7 @@ def update(ctx: typer.Context, user_id: int):
 
     policy = RequestPolicy(
         user=ctx.obj["current_user"],
-        ressource= ctx.obj["ressource"],
+        ressource=ctx.obj["ressource"],
         action="update",
     )
 
@@ -129,6 +130,7 @@ def update(ctx: typer.Context, user_id: int):
     else:
         error_display(response.error, response.msg)
 
+
 @user_app.command(help="Afficher un utilisateur")
 def show(ctx: typer.Context, user_id: int):
     """
@@ -151,6 +153,7 @@ def show(ctx: typer.Context, user_id: int):
     else:
         error_display(response.error, response.msg)
 
+
 @user_app.command(help="Afficher une liste d'utilisateur")
 def list(
         ctx: typer.Context,
@@ -170,7 +173,6 @@ def list(
         list_filter=list_filter,
     )
 
-
     repo = SQLAlchemyUserRepository(ctx.obj["session"])
     use_case = ListUserUseCase(repo)
     response = use_case.execute(request)
@@ -179,6 +181,7 @@ def list(
         _display_data_list(response.users, list_filter)
     else:
         error_display(response.error, response.msg)
+
 
 @user_app.command(help="Supprimer un utilisateur")
 def delete(ctx: typer.Context, user_id: int):
@@ -191,7 +194,7 @@ def delete(ctx: typer.Context, user_id: int):
     repo = SQLAlchemyUserRepository(ctx.obj["session"])
     use_case = DeleteUserUseCase(repo)
 
-    #verification ressource existe
+    # verification ressource existe
     if not repo.exist(user_id):
         error_display("Ressource", "Utilisateur non trouvé")
         raise typer.Exit()
@@ -207,7 +210,7 @@ def delete(ctx: typer.Context, user_id: int):
     )
     request = DeleteUserRequest(
         user_id=user_id,
-        authorization= policy,
+        authorization=policy,
     )
 
     response = use_case.execute(request)
@@ -216,6 +219,7 @@ def delete(ctx: typer.Context, user_id: int):
         console.print(f"\n[bold]Utilisateur #{user_id} supprimé[/bold]\n")
     else:
         error_display(response.error, response.msg)
+
 
 def _display_data(user: User):
     """ Display data of User """
@@ -243,6 +247,7 @@ def _display_data(user: User):
 
     console.print(panel)
 
+
 def _display_data_list(users: List[User], list_filter: UserFilter):
     """
     Display users table
@@ -262,7 +267,6 @@ def _display_data_list(users: List[User], list_filter: UserFilter):
     table.add_column("Role", width=16)
 
     for user in users:
-
         table.add_row(
             str(user.id),
             user.fullname,

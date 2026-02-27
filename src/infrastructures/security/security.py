@@ -38,7 +38,6 @@ class JWTTokenManager:
         token = jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
         return token
 
-
     def decode_token(self, token: str) -> Optional[dict]:
         """Decode JWT token"""
         try:
@@ -72,6 +71,7 @@ class TokenStore:
         """Supprime le token"""
         if cls.TOKEN_FILE.exists():
             cls.TOKEN_FILE.unlink()
+
     @classmethod
     def has_token(cls) -> bool:
         """Vérifie si un token est enregistré"""
@@ -85,7 +85,7 @@ class TokenStore:
             return True
 
         try:
-            jwt.decode(token,os.getenv("JWT_SECRET_KEY"), os.getenv("JWT_ALGORITHM"))
+            jwt.decode(token, os.getenv("JWT_SECRET_KEY"), os.getenv("JWT_ALGORITHM"))
             return False
         except jwt.ExpiredSignatureError:
             return True

@@ -4,6 +4,7 @@ from rich.panel import Panel
 
 console = Console()
 
+
 def error_display(title, message):
     """ Display error message """
     content = f" {message} "

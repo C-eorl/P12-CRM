@@ -11,11 +11,13 @@ class AuthenticateRequest:
     email: str
     password: str
 
+
 @dataclass
 class AuthenticateResponse:
     success: bool
     error: Optional[str] = None
     msg: Optional[str] = None
+
 
 class AuthenticateUseCase:
     def __init__(self,
