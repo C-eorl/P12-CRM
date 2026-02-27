@@ -14,15 +14,14 @@ _engine = None
 _SessionLocal = None
 
 
-def init_engine(force=False):
+def init_engine():
     """
     Initialize the database engine
-    :param force: force the engine to be initialized
     :return:
     """
     global _engine, _SessionLocal
 
-    if _engine is not None and not force:
+    if _engine is not None:
         return
 
     database_url = os.environ.get("DATABASE_URL")
@@ -100,6 +99,6 @@ def init_db():
     Initialize the table database
     :return:
     """
-    init_engine(force=True)
+    init_engine()
     engine = get_engine()
     Base.metadata.create_all(engine)
