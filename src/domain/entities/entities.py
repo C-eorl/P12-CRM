@@ -158,16 +158,19 @@ class Event:
         if end_date is not None:
             if not isinstance(end_date, datetime):
                 raise BusinessRuleViolation("la date de fin doit être une date valide")
-            if end_date <= start_date:
+
+            reference_start_date = start_date if start_date is not None else self.start_date
+
+            if end_date <= reference_start_date:
                 raise BusinessRuleViolation(
                     "La date de fin doit être après la date de début"
                 )
             self.end_date = end_date
 
         if location is not None:
-            if not isinstance(name, str):
+            if not isinstance(location, str):
                 raise BusinessRuleViolation("Le lieu doit être du texte")
-            if not name.strip():
+            if not location.strip():
                 raise BusinessRuleViolation("le nom ne peut pas être vide")
             self.location = location
 
