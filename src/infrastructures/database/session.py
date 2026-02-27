@@ -33,15 +33,6 @@ def init_engine(force=False):
     _SessionLocal = sessionmaker(bind=_engine)
 
 
-def init_db():
-    """
-    Initialize the table database
-    :return:
-    """
-    engine = get_engine() if _engine else None
-    init_engine(force=True)
-    engine = get_engine()
-    Base.metadata.create_all(engine)
 
 
 def init_postgresql(user, password, db_name):
@@ -102,3 +93,13 @@ def get_session() -> Session:
     if _SessionLocal is None:
         init_engine()
     return _SessionLocal()
+
+
+def init_db():
+    """
+    Initialize the table database
+    :return:
+    """
+    init_engine(force=True)
+    engine = get_engine()
+    Base.metadata.create_all(engine)
