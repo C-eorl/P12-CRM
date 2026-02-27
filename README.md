@@ -37,7 +37,7 @@ Cela permet un découplage fort, une logique métier indépendante, une facilit�
     
 * cloner le githup
 ```bash
-git@github.com:C-eorl/P12-CRM.git
+git clone git@github.com:C-eorl/P12-CRM.git
 cd P12-CRM
 ```
 * créer environnement virtuel & activer
