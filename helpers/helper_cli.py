@@ -1,3 +1,4 @@
+import sentry_sdk
 from rich.console import Console
 from rich.panel import Panel
 
@@ -13,4 +14,5 @@ def error_display(title, message):
         expand=False,
         padding=1,
     )
+    sentry_sdk.capture_message(message, level="info")
     console.print(panel)

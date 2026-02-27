@@ -33,15 +33,12 @@ def init_environment():
     ENV_PATH = Path(".env")
 
     DEFAULT_ENV = {
-        # --- Database ---
         "DATABASE_URL": "",
 
-        # --- Security ---
         "JWT_SECRET_KEY": "votre-cle-secret",
         "JWT_ALGORITHM": "HS256",
         "JWT_EXPIRATION_HOURS": "8",
 
-        # --- Monitoring ---
         "SENTRY_DSN": "",
     }
 
